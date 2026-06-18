@@ -524,6 +524,97 @@ describe('DataTable', () => {
     });
   });
 
+  describe('topbar customization (renderTopbar)', () => {
+    it('renders the default left/center/right layout when renderTopbar is omitted', () => {
+      renderWithProviders(<DataTable data={mockData} columns={columns} enableGlobalSearch />);
+
+      expect(document.querySelector('.snow-topbar-left')).toBeInTheDocument();
+      expect(document.querySelector('.snow-topbar-center')).toBeInTheDocument();
+      expect(document.querySelector('.snow-topbar-right')).toBeInTheDocument();
+    });
+
+    it('lets renderTopbar reorder elements (custom marker before search)', () => {
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columns}
+          enableGlobalSearch
+          renderTopbar={({ search }) => (
+            <div className="snow-topbar-right">
+              <span data-testid="custom-marker">before</span>
+              {search}
+            </div>
+          )}
+        />
+      );
+
+      const marker = screen.getByTestId('custom-marker');
+      const searchBar = screen.getByTestId('data-table-search-bar');
+
+      // Default layout would never render a custom marker; here it precedes the search bar.
+      expect(marker).toBeInTheDocument();
+      expect(marker.compareDocumentPosition(searchBar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      // The default sections are NOT rendered when a custom layout is provided.
+      expect(document.querySelector('.snow-topbar-left')).not.toBeInTheDocument();
+      expect(document.querySelector('.snow-topbar-center')).not.toBeInTheDocument();
+    });
+
+    it('lets renderTopbar inject custom controls', () => {
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columns}
+          enableGlobalSearch
+          renderTopbar={({ search }) => (
+            <div>
+              {search}
+              <button data-testid="custom-topbar-btn">Export</button>
+            </div>
+          )}
+        />
+      );
+
+      expect(screen.getByTestId('custom-topbar-btn')).toBeInTheDocument();
+    });
+
+    it('passes the wired search element when global search is enabled', () => {
+      const received: Record<string, boolean> = {};
+
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columns}
+          enableGlobalSearch
+          renderTopbar={elements => {
+            received.search = elements.search !== null;
+            received.filters = elements.filters !== null;
+            return <div>{elements.search}</div>;
+          }}
+        />
+      );
+
+      expect(received.search).toBe(true);
+      // No filters configured → that element is null.
+      expect(received.filters).toBe(false);
+      // The element returned by renderTopbar is the real, wired SearchBar.
+      expect(screen.getByTestId('data-table-search-bar')).toBeInTheDocument();
+    });
+
+    it('renders the topbar even when no other feature is enabled', () => {
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columns}
+          renderTopbar={() => <div data-testid="custom-topbar">custom</div>}
+        />
+      );
+
+      expect(screen.getByTestId('custom-topbar')).toBeInTheDocument();
+      expect(document.querySelector('.snow-table-top-bar')).toBeInTheDocument();
+    });
+  });
+
   describe('custom texts', () => {
     it('should use custom empty title', () => {
       renderWithProviders(
