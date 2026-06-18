@@ -6,6 +6,7 @@ import {
   type SnowColumnConfig,
   type ServerFetchParams,
   type ServerPaginatedResponse,
+  type TopbarElements,
 } from '@snowpact/snowtable';
 import { CodePanel, ConfigPanel, type DemoConfig, type User, type ThemeColors, defaultTheme } from './components';
 import { EditIcon, TrashIcon, EyeIcon, CopyIcon, MailIcon, ArchiveIcon } from './icons';
@@ -192,6 +193,7 @@ export function App() {
     enablePrefilters: true,
     persistState: false,
     enableRowClick: false,
+    customTopbarOrder: false,
     mobilePreview: false,
   });
 
@@ -319,6 +321,35 @@ export function App() {
       }),
     ...(config.enableRowClick && {
       onRowClick: (item: User) => alert(`Clicked on ${item.name} (${item.email})`),
+    }),
+    // Custom topbar order: filters + a custom button moved to the left, search to the right.
+    ...(config.customTopbarOrder && {
+      renderTopbar: ({ prefilters, search, filters, columnConfiguration, resetFilters }: TopbarElements) => (
+        <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {filters}
+            <button
+              onClick={() => alert('Custom topbar action!')}
+              style={{
+                padding: '0.375rem 0.75rem',
+                borderRadius: '0.375rem',
+                border: '1px solid #e5e5e5',
+                background: '#fff',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+              }}
+            >
+              ⭐ Custom
+            </button>
+            {prefilters}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {search}
+            {columnConfiguration}
+            {resetFilters}
+          </div>
+        </div>
+      ),
     }),
   };
 

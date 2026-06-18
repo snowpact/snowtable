@@ -19,6 +19,7 @@ import {
 } from '@tanstack/react-table';
 import { FunnelX } from '../icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { Button } from '../primitives/Button';
 import { Skeleton } from '../primitives/Skeleton';
@@ -34,6 +35,26 @@ import { SearchBar } from './SearchBar';
 import type { FilterConfig } from './SingleFilterDropdown';
 import { SingleFilterDropdown } from './SingleFilterDropdown';
 import { SortButton } from './SortButton';
+
+/**
+ * Pre-rendered topbar elements passed to {@link DataTableProps.renderTopbar}.
+ *
+ * Each element is already wired with its state and callbacks. An element is
+ * `null` when its underlying feature is disabled, so you can render it
+ * unconditionally — `null` renders nothing.
+ */
+export type TopbarElements = {
+  /** Prefilter tabs / select (left section by default). `null` if no prefilters. */
+  prefilters: ReactNode;
+  /** Global search input (center section by default). `null` if search disabled. */
+  search: ReactNode;
+  /** Column filter dropdowns, one per configured filter. `null` if no filters. */
+  filters: ReactNode;
+  /** Column visibility configuration button. `null` if disabled. */
+  columnConfiguration: ReactNode;
+  /** Reset-all-filters button. `null` if there is nothing to reset. */
+  resetFilters: ReactNode;
+};
 
 export type DataTableProps<T extends object> = {
   // === DATA ===
@@ -90,6 +111,29 @@ export type DataTableProps<T extends object> = {
     emptyTitle?: string;
   };
 
+  // === TOPBAR ===
+  /**
+   * Customize the topbar layout and element ordering.
+   *
+   * Receives the pre-rendered topbar elements ({@link TopbarElements}) and must
+   * return the topbar content. Use it to reorder elements, regroup them across
+   * sections, or interleave your own custom controls (export buttons, etc.).
+   *
+   * When omitted, the default `left / center / right` layout is used.
+   *
+   * @example
+   * renderTopbar={({ search, filters, columnConfiguration, resetFilters }) => (
+   *   <div className="snow-topbar-right">
+   *     {filters}
+   *     <MyExportButton />
+   *     {search}
+   *     {columnConfiguration}
+   *     {resetFilters}
+   *   </div>
+   * )}
+   */
+  renderTopbar?: (elements: TopbarElements) => ReactNode;
+
   // === RESET ===
   onResetFilters?: () => void;
 
@@ -140,6 +184,8 @@ export function DataTable<Data extends object>({
   paginationSizes,
   enableResponsive = true,
   texts,
+  // Topbar
+  renderTopbar,
   // Reset
   onResetFilters,
   // Styling
@@ -276,7 +322,11 @@ export function DataTable<Data extends object>({
   };
 
   const displayAdvancedBar =
-    enableGlobalSearch || displayTotalNumber || (filters && filters.length > 0) || enableColumnConfiguration;
+    enableGlobalSearch ||
+    displayTotalNumber ||
+    (filters && filters.length > 0) ||
+    enableColumnConfiguration ||
+    !!renderTopbar;
 
   // For client-side, get count from current page rows; for manual mode, just use data length
   const itemCount = useMemo(() => {
@@ -295,6 +345,52 @@ export function DataTable<Data extends object>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverSideMode, externalTotalCount, table, data.length, globalFilter, tanstackColumnFilters]);
 
+  // Pre-rendered topbar elements, exposed to a custom `renderTopbar` layout and
+  // used by the default left/center/right layout. Each is `null` when its
+  // underlying feature is disabled.
+  const topbarElements: TopbarElements = {
+    prefilters:
+      prefilters && prefilters.length > 0 && onPrefilterChange ? (
+        <PrefilterTabs
+          prefilters={prefilters}
+          activePrefilter={activePrefilter ?? prefilters[0]?.id ?? ''}
+          onPrefilterChange={onPrefilterChange}
+        />
+      ) : null,
+    search: enableGlobalSearch ? (
+      <div className="snow-w-full snow-max-w-sm">
+        <SearchBar
+          value={globalFilter}
+          onDebouncedChange={handleGlobalFilterChangeWithReset}
+          placeholder={texts?.searchPlaceholder || t('dataTable.search')}
+        />
+      </div>
+    ) : null,
+    filters:
+      filters && filters.length > 0
+        ? filters.map(filter => (
+            <SingleFilterDropdown
+              key={String(filter.key)}
+              filter={filter}
+              selectedValues={columnFilters[String(filter.key)]}
+              onFilterChange={handleFilterChange}
+            />
+          ))
+        : null,
+    columnConfiguration: enableColumnConfiguration ? <ColumnConfiguration table={table} /> : null,
+    resetFilters:
+      (enableGlobalSearch || (prefilters && prefilters.length > 0) || (filters && filters.length > 0)) &&
+      onResetFilters ? (
+        <Button
+          onClick={onResetFilters}
+          title={t('dataTable.resetFilters')}
+          data-testid="datatable-reset-filters"
+        >
+          <FunnelX className="snow-size-4" />
+        </Button>
+      ) : null,
+  };
+
   return (
     <div className={cn('snow-table-container snow-table-root', className)} data-testid="datatable">
       {/* Loading overlay during fetching (server-side) */}
@@ -302,51 +398,24 @@ export function DataTable<Data extends object>({
 
       {displayAdvancedBar && (
         <div className="snow-table-top-bar">
-          {/* Left: Prefilter tabs */}
-          <div className="snow-topbar-left">
-            {prefilters && prefilters.length > 0 && onPrefilterChange && (
-              <PrefilterTabs
-                prefilters={prefilters}
-                activePrefilter={activePrefilter ?? prefilters[0]?.id ?? ''}
-                onPrefilterChange={onPrefilterChange}
-              />
-            )}
-          </div>
+          {renderTopbar ? (
+            renderTopbar(topbarElements)
+          ) : (
+            <>
+              {/* Left: Prefilter tabs */}
+              <div className="snow-topbar-left">{topbarElements.prefilters}</div>
 
-          {/* Center: Search bar */}
-          <div className="snow-topbar-center">
-            {enableGlobalSearch && (
-              <div className="snow-w-full snow-max-w-sm">
-                <SearchBar
-                  value={globalFilter}
-                  onDebouncedChange={handleGlobalFilterChangeWithReset}
-                  placeholder={texts?.searchPlaceholder || t('dataTable.search')}
-                />
+              {/* Center: Search bar */}
+              <div className="snow-topbar-center">{topbarElements.search}</div>
+
+              {/* Right: Filters and actions */}
+              <div className="snow-topbar-right">
+                {topbarElements.filters}
+                {topbarElements.columnConfiguration}
+                {topbarElements.resetFilters}
               </div>
-            )}
-          </div>
-
-          {/* Right: Filters and actions */}
-          <div className="snow-topbar-right">
-            {filters?.map(filter => (
-              <SingleFilterDropdown
-                key={String(filter.key)}
-                filter={filter}
-                selectedValues={columnFilters[String(filter.key)]}
-                onFilterChange={handleFilterChange}
-              />
-            ))}
-            {enableColumnConfiguration && <ColumnConfiguration table={table} />}
-            {(enableGlobalSearch || (prefilters && prefilters.length > 0) || (filters && filters.length > 0)) && onResetFilters && (
-              <Button
-                onClick={onResetFilters}
-                title={t('dataTable.resetFilters')}
-                data-testid="datatable-reset-filters"
-              >
-                <FunnelX className="snow-size-4" />
-              </Button>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
 

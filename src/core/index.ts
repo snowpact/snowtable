@@ -3,7 +3,7 @@
  */
 
 export { ColumnConfiguration, type ColumnConfigurationProps } from './ColumnConfiguration';
-export { DataTable, type DataTableProps } from './DataTable';
+export { DataTable, type DataTableProps, type TopbarElements } from './DataTable';
 export { PageSizeSelector, type PageSizeSelectorProps } from './PageSizeSelector';
 export { DEFAULT_PAGE_SIZES, Pagination, type PaginationProps } from './Pagination';
 export { PrefilterTabs, type PreFilter, type PrefilterTabsProps } from './PrefilterTabs';

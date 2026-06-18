@@ -94,6 +94,23 @@ export function generateTableCode(config: DemoConfig): string {
   if (config.enableColumnConfiguration) props.push(`enableColumnConfiguration`);
   if (config.persistState) props.push(`persistState`);
 
+  if (config.customTopbarOrder) {
+    props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration, resetFilters }) => (
+    <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {filters}
+        <button onClick={() => alert('Custom topbar action!')}>⭐ Custom</button>
+        {prefilters}
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {search}
+        {columnConfiguration}
+        {resetFilters}
+      </div>
+    </div>
+  )}`);
+  }
+
   if (config.enableFilters) {
     props.push(`filters={[
     {

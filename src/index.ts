@@ -19,7 +19,7 @@ export { SnowServerDataTable } from './SnowServerDataTable';
 
 // Core DataTable (for advanced usage)
 export { DataTable, DEFAULT_PAGE_SIZES } from './core';
-export type { DataTableProps } from './core';
+export type { DataTableProps, TopbarElements } from './core';
 
 // Core sub-components (for advanced usage)
 export {

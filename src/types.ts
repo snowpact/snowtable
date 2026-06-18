@@ -10,6 +10,7 @@ import type { ComponentType, ReactNode, SVGProps } from 'react';
  */
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
+import type { TopbarElements } from './core/DataTable';
 import type { PreFilter } from './core/PrefilterTabs';
 import type { FilterConfig } from './core/SingleFilterDropdown';
 import type { SearchMode } from './utils/fuzzyFilter';
@@ -116,6 +117,27 @@ export interface DataTableUIOptions<T extends object> {
   };
   /** Custom CSS class applied on the root wrapper. Useful for scoped theming. */
   className?: string;
+  /**
+   * Customize the topbar layout and element ordering.
+   *
+   * Receives the pre-rendered topbar elements ({@link TopbarElements}) and must
+   * return the topbar content. Use it to reorder elements, regroup them across
+   * sections, or interleave your own custom controls (export buttons, etc.).
+   *
+   * When omitted, the default `left / center / right` layout is used.
+   *
+   * @example
+   * renderTopbar={({ search, filters, columnConfiguration, resetFilters }) => (
+   *   <div className="snow-topbar-right">
+   *     {filters}
+   *     <MyExportButton />
+   *     {search}
+   *     {columnConfiguration}
+   *     {resetFilters}
+   *   </div>
+   * )}
+   */
+  renderTopbar?: (elements: TopbarElements) => ReactNode;
 }
 
 // ============================================

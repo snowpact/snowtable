@@ -162,7 +162,7 @@ export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onTh
             </div>
           </label>
 
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label className="flex items-start gap-3 cursor-pointer mb-3">
             <input
               type="checkbox"
               checked={config.enableRowClick}
@@ -173,6 +173,21 @@ export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onTh
               <span className="font-medium">Row Click</span>
               <p className="text-xs text-gray-400">
                 Click a row to trigger a callback
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.customTopbarOrder}
+              onChange={() => onToggle('customTopbarOrder')}
+              className="w-4 h-4 mt-1 text-blue-500 rounded focus:ring-blue-500"
+            />
+            <div>
+              <span className="font-medium">Custom Topbar Order</span>
+              <p className="text-xs text-gray-400">
+                Reorder topbar elements via renderTopbar
               </p>
             </div>
           </label>

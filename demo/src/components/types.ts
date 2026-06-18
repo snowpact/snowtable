@@ -8,6 +8,7 @@ export interface DemoConfig {
   enablePrefilters: boolean;
   persistState: boolean;
   enableRowClick: boolean;
+  customTopbarOrder: boolean;
   mobilePreview: boolean;
 }
 
