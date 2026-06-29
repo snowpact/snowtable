@@ -18,7 +18,7 @@ import {
   VisibilityState,
 } from '@tanstack/react-table';
 import { FunnelX } from '../icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { Button } from '../primitives/Button';
@@ -35,6 +35,7 @@ import { SearchBar } from './SearchBar';
 import type { FilterConfig } from './SingleFilterDropdown';
 import { SingleFilterDropdown } from './SingleFilterDropdown';
 import { SortButton } from './SortButton';
+import { TableRow } from './TableRow';
 
 /**
  * Pre-rendered topbar elements passed to {@link DataTableProps.renderTopbar}.
@@ -274,6 +275,15 @@ export function DataTable<Data extends object>({
     return filterValue.includes(String(cellValue));
   }, []);
 
+  // Stable identity for the row-click handler. Consumers often pass an inline
+  // `onRowClick={() => ...}`; without this, every memoized row would see a new
+  // prop on each render and re-render. The ref always holds the latest handler.
+  const onRowClickRef = useRef(onRowClick);
+  onRowClickRef.current = onRowClick;
+  const stableOnRowClick = useCallback((rowData: Data) => {
+    onRowClickRef.current?.(rowData);
+  }, []);
+
   const table = useReactTable({
     data,
     columns,
@@ -471,55 +481,20 @@ export function DataTable<Data extends object>({
               className={cn('snow-divide-y snow-divide-border', enableResponsive && 'snow-responsive-tbody')}
               data-testid="datatable-body"
             >
-              {table.getRowModel().rows.map((row, rowIndex) => (
-                <tr
-                  key={row.id}
-                  data-testid={`datatable-row-${row.id}`}
-                  className={cn(
-                    'snow-table-row snow-transition-all snow-duration-300 snow-ease-in-out',
-                    {
-                      'snow-table-row-alternate': rowIndex % 2 === 1,
-                      'snow-table-row-active':
-                        activeRowId !== undefined && 'id' in row.original && activeRowId === row.original.id,
-                    },
-                    enableResponsive && 'snow-responsive-row'
-                  )}
-                >
-                  {row.getVisibleCells().map((cell, cellIndex) => {
-                    const headerLabel =
-                      typeof cell.column.columnDef.header === 'string' ? cell.column.columnDef.header : cell.column.id;
-                    const isLastCell = cellIndex === row.getVisibleCells().length - 1;
-                    const meta = cell.column.columnDef?.meta;
-
-                    return (
-                      <td
-                        key={cell.id}
-                        onClick={() =>
-                          onRowClick && !meta?.disableColumnClick && onRowClick(row.original)
-                        }
-                        className={cn(
-                          onRowClick && !meta?.disableColumnClick && 'snow-cursor-pointer',
-                          meta?.center && 'snow-align-middle snow-text-center',
-                          meta?.maxWidth !== undefined && 'snow-cell-truncate',
-                          enableResponsive
-                            ? cn('snow-responsive-cell', isLastCell && 'snow-responsive-cell-last')
-                            : 'snow-table-cell'
-                        )}
-                        style={{
-                          '--snow-col-width': meta?.width,
-                          '--snow-col-min-width': meta?.minWidth,
-                          '--snow-col-max-width': meta?.maxWidth,
-                        } as React.CSSProperties}
-                      >
-                        {enableResponsive && <span className="snow-responsive-cell-label">{headerLabel}</span>}
-                        <span className={cn(enableResponsive && 'snow-responsive-cell-content')}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {table.getRowModel().rows.map((row, rowIndex) => {
+                const isActive =
+                  activeRowId !== undefined && 'id' in row.original && activeRowId === row.original.id;
+                return (
+                  <TableRow
+                    key={row.id}
+                    row={row}
+                    rowIndex={rowIndex}
+                    isActive={isActive}
+                    onRowClick={onRowClick ? stableOnRowClick : undefined}
+                    enableResponsive={enableResponsive}
+                  />
+                );
+              })}
             </tbody>
           ) : (
             <caption className="snow-table-empty" data-testid="datatable-empty">
