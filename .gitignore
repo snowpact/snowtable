@@ -1,6 +1,7 @@
 node_modules/
 dist/
 demo-dist/
+perf/results/
 *.log
 .DS_Store
 .claude
