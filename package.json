@@ -1,6 +1,6 @@
 {
   "name": "@snowpact/snowtable",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "description": "Ultra-light, registry-based data table for React, TanStack Table and TanStack Query",
   "author": "Snowpact",
   "license": "MIT",
