@@ -6,3 +6,4 @@ perf/results/
 .DS_Store
 .claude
 .context
+.npmrc
