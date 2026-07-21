@@ -9,6 +9,7 @@ import { DataTable, DEFAULT_PAGE_SIZES } from './core';
 import { useSnowColumns } from './hooks/useSnowColumns';
 import { useTableStatePersist } from './hooks/useTableStatePersist';
 import { SnowClientDataTableProps } from './types';
+import { deriveColumnConfigurationId } from './utils';
 
 const EMPTY_ITEMS: never[] = [];
 
@@ -83,6 +84,8 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
   return (
     <DataTable
       mode="client"
+      // `queryKey` is required and unique per table, so two tables never share a config cookie.
+      columnConfigCookieSuffix={deriveColumnConfigurationId(queryKey)}
       data={prefilteredData}
       columns={columns}
       isLoading={isLoading}

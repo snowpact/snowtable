@@ -98,6 +98,12 @@ export type DataTableProps<T extends object> = {
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
   enableColumnConfiguration?: boolean;
+  /**
+   * Suffix of the `datatable-config-<suffix>` cookie persisting the column visibility, unique per
+   * table. Defaults to one derived from the column set — pass it when two tables share the very
+   * same columns, otherwise they share the same cookie.
+   */
+  columnConfigCookieSuffix?: string;
 
   // === UI OPTIONS ===
   onRowClick?: (data: T) => void;
@@ -176,6 +182,7 @@ export function DataTable<Data extends object>({
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
   enableColumnConfiguration = false,
+  columnConfigCookieSuffix,
   // UI options
   onRowClick,
   activeRowId,
@@ -387,7 +394,9 @@ export function DataTable<Data extends object>({
             />
           ))
         : null,
-    columnConfiguration: enableColumnConfiguration ? <ColumnConfiguration table={table} /> : null,
+    columnConfiguration: enableColumnConfiguration ? (
+      <ColumnConfiguration table={table} cookieSuffix={columnConfigCookieSuffix} />
+    ) : null,
     resetFilters:
       (enableGlobalSearch || (prefilters && prefilters.length > 0) || (filters && filters.length > 0)) &&
       onResetFilters ? (

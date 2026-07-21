@@ -4,7 +4,7 @@
 
 import { Table } from '@tanstack/react-table';
 import { Settings } from '../icons';
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect } from 'react';
 
 import { Button } from '../primitives/Button';
 import { DropdownMenu } from '../primitives/DropdownMenu';
@@ -12,18 +12,27 @@ import { getT } from '../registry';
 import {
   saveColumnConfiguration,
   loadColumnConfiguration,
-  generateColumnConfigurationId,
+  deriveColumnConfigurationId,
   deleteColumnConfiguration,
 } from '../utils';
 
 export type ColumnConfigurationProps<T extends object> = {
   table: Table<T>;
+  /**
+   * Suffix of the `datatable-config-<suffix>` cookie, unique per table.
+   * Defaults to one derived from the column set; the Snow wrappers derive theirs from `queryKey`.
+   */
+  cookieSuffix?: string;
 };
 
-export function ColumnConfiguration<T extends object>({ table }: ColumnConfigurationProps<T>) {
+export function ColumnConfiguration<T extends object>({
+  table,
+  cookieSuffix: cookieSuffixProp,
+}: ColumnConfigurationProps<T>) {
   const t = getT();
 
-  const configId = useRef(generateColumnConfigurationId());
+  const cookieSuffix =
+    cookieSuffixProp ?? deriveColumnConfigurationId(table.getAllColumns().map(column => column.id));
 
   const configurableColumns = useMemo(() => {
     return table.getAllColumns().filter(column => {
@@ -52,7 +61,7 @@ export function ColumnConfiguration<T extends object>({ table }: ColumnConfigura
 
   // Load column configuration from cookies on mount
   useEffect(() => {
-    const savedConfig = loadColumnConfiguration(configId.current);
+    const savedConfig = loadColumnConfiguration(cookieSuffix);
     let hasError = false;
     if (savedConfig) {
       Object.entries(savedConfig).forEach(([columnId, isVisible]) => {
@@ -64,13 +73,13 @@ export function ColumnConfiguration<T extends object>({ table }: ColumnConfigura
         }
       });
       if (hasError) {
-        deleteColumnConfiguration(configId.current);
+        deleteColumnConfiguration(cookieSuffix);
       }
     } else {
       applyDefaultConfiguration();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configId.current, table, configurableColumns]);
+  }, [cookieSuffix, table, configurableColumns]);
 
   const handleToggleVisibility = (columnId: string, checked: boolean) => {
     const column = table.getColumn(columnId);
@@ -82,7 +91,7 @@ export function ColumnConfiguration<T extends object>({ table }: ColumnConfigura
         ...table.getState().columnVisibility,
         [columnId]: checked,
       };
-      saveColumnConfiguration(configId.current, updatedVisibility);
+      saveColumnConfiguration(cookieSuffix, updatedVisibility);
     }
   };
 
@@ -96,7 +105,7 @@ export function ColumnConfiguration<T extends object>({ table }: ColumnConfigura
       const defaultHidden = column.columnDef.meta?.defaultHidden;
       defaultVisibility[column.id] = !defaultHidden;
     });
-    saveColumnConfiguration(configId.current, defaultVisibility);
+    saveColumnConfiguration(cookieSuffix, defaultVisibility);
   };
 
   return (

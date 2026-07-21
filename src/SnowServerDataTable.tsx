@@ -8,6 +8,7 @@ import { DataTable, DEFAULT_PAGE_SIZES } from './core';
 import { useSnowColumns } from './hooks/useSnowColumns';
 import { useTableStatePersist } from './hooks/useTableStatePersist';
 import { SnowServerDataTableProps } from './types';
+import { deriveColumnConfigurationId } from './utils';
 
 export const SnowServerDataTable = <T extends Record<string, unknown>, K = unknown>({
   queryKey,
@@ -80,6 +81,8 @@ export const SnowServerDataTable = <T extends Record<string, unknown>, K = unkno
   return (
     <DataTable
       mode="server"
+      // `queryKey` is required and unique per table, so two tables never share a config cookie.
+      columnConfigCookieSuffix={deriveColumnConfigurationId(queryKey)}
       data={serverQuery.data?.items ?? []}
       columns={columns}
       isLoading={serverQuery.isLoading}

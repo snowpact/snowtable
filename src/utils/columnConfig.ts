@@ -41,27 +41,17 @@ export const deleteColumnConfiguration = (configId: string) => {
   }
 };
 
-export const generateColumnConfigurationId = (): string => {
-  try {
-    // Get the stack trace to find the parent component name
-    const stack = new Error().stack;
-    if (stack) {
-      const lines = stack.split('\n');
-      // Look for the calling component (usually 3-4 lines up in the stack)
-      for (let i = 2; i < Math.min(lines.length, 6); i++) {
-        const line = lines[i];
-        // Match React component names (capitalized function names)
-        const match = line.match(/at\s+([A-Z][a-zA-Z0-9_]*)/);
-        if (match && match[1] !== 'ColumnConfiguration') {
-          return match[1].toLowerCase();
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to generate config ID from parent component:', error);
+/**
+ * Derive a stable, table-specific cookie suffix from a signature (a `queryKey` or a column set).
+ * Hash data, never code: the call stack this used to read collapsed under minification, so every
+ * table shared one cookie.
+ */
+export const deriveColumnConfigurationId = (signatureParts: string[]): string => {
+  const signature = signatureParts.join('|');
+  // djb2
+  let hash = 5381;
+  for (let i = 0; i < signature.length; i++) {
+    hash = ((hash << 5) + hash + signature.charCodeAt(i)) | 0;
   }
-
-  // Fallback: use current pathname
-  const pathname = window.location.pathname.replace(/[^a-zA-Z0-9]/g, '-');
-  return `datatable-${pathname}`;
+  return `t${(hash >>> 0).toString(36)}`;
 };

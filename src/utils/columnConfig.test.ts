@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   deleteColumnConfiguration,
-  generateColumnConfigurationId,
+  deriveColumnConfigurationId,
   loadColumnConfiguration,
   saveColumnConfiguration,
 } from './columnConfig';
@@ -119,53 +119,39 @@ describe('columnConfig', () => {
     });
   });
 
-  describe('generateColumnConfigurationId', () => {
-    it('should generate id from pathname when stack parsing fails', () => {
-      // Mock window.location
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/users/list',
-        },
-        writable: true,
-        configurable: true,
-      });
+  describe('deriveColumnConfigurationId', () => {
+    it('is deterministic for the same column set', () => {
+      const ids = ['id', 'name', 'status'];
 
-      const id = generateColumnConfigurationId();
-
-      expect(id).toContain('datatable-');
-      expect(id).toContain('users');
+      expect(deriveColumnConfigurationId(ids)).toBe(deriveColumnConfigurationId(ids));
     });
 
-    it('should handle special characters in pathname', () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/users/123/details',
-        },
-        writable: true,
-        configurable: true,
-      });
+    it('differs between two distinct column sets (no cross-table cookie sharing)', () => {
+      const issueTable = ['creationDate', 'processingStatus', 'address'];
+      const requestIssueTable = ['creationDate', 'automationStatus', 'feedbackEmail'];
 
-      const id = generateColumnConfigurationId();
+      expect(deriveColumnConfigurationId(issueTable)).not.toBe(deriveColumnConfigurationId(requestIssueTable));
+    });
 
-      // Should replace non-alphanumeric chars with dashes
+    it('is order-sensitive so a reordered column set is a different table', () => {
+      expect(deriveColumnConfigurationId(['a', 'b'])).not.toBe(deriveColumnConfigurationId(['b', 'a']));
+    });
+
+    it('produces a cookie-safe string (no separators)', () => {
+      const id = deriveColumnConfigurationId(['a', 'b', 'c']);
+
+      expect(id).toMatch(/^t[a-z0-9]+$/);
       expect(id).not.toContain('/');
+      expect(id).not.toContain('=');
     });
 
-    it('should return consistent id for same pathname', () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/test-page',
-        },
-        writable: true,
-        configurable: true,
-      });
+    it('does not read the call stack or the pathname', () => {
+      // Same input from two unrelated call sites must yield the same id — the previous
+      // implementation scraped new Error().stack, which collapsed under minification.
+      const fromHere = deriveColumnConfigurationId(['x', 'y']);
+      const fromWrapper = (() => deriveColumnConfigurationId(['x', 'y']))();
 
-      const id1 = generateColumnConfigurationId();
-      const id2 = generateColumnConfigurationId();
-
-      // The fallback path-based ID should be consistent
-      expect(id1.includes('test-page') || id1.includes('datatable')).toBe(true);
-      expect(id2.includes('test-page') || id2.includes('datatable')).toBe(true);
+      expect(fromHere).toBe(fromWrapper);
     });
   });
 
