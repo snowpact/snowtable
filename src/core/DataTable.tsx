@@ -410,6 +410,14 @@ export function DataTable<Data extends object>({
       ) : null,
   };
 
+  // Signature of the visible columns (ids + order). Passed to every memoized TableRow so a
+  // column-visibility toggle busts the row memo — TanStack keeps the `row` reference stable across a
+  // visibility change, so without this signal the rows keep stale cells and desync from the header.
+  const visibleColumnsKey = table
+    .getVisibleLeafColumns()
+    .map(column => column.id)
+    .join('|');
+
   return (
     <div className={cn('snow-table-container snow-table-root', className)} data-testid="datatable">
       {/* Loading overlay during fetching (server-side) */}
@@ -501,6 +509,7 @@ export function DataTable<Data extends object>({
                     isActive={isActive}
                     onRowClick={onRowClick ? stableOnRowClick : undefined}
                     enableResponsive={enableResponsive}
+                    visibleColumnsKey={visibleColumnsKey}
                   />
                 );
               })}

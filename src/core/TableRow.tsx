@@ -20,6 +20,13 @@ export type TableRowProps<Data extends object> = {
   /** Stable identity expected — see DataTable's stableOnRowClick. */
   onRowClick?: (data: Data) => void;
   enableResponsive: boolean;
+  /**
+   * Signature of the visible columns (ids + order). Not read in render — it exists only so the
+   * `memo` comparison re-renders the row when column visibility changes. TanStack keeps the `row`
+   * reference stable across a visibility toggle (visibility is not part of the row model), so
+   * without this signal the row keeps its stale `getVisibleCells()` and desyncs from the header.
+   */
+  visibleColumnsKey: string;
 };
 
 function TableRowInner<Data extends object>({

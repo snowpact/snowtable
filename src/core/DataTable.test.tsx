@@ -612,6 +612,33 @@ describe('DataTable', () => {
       const derived = deriveColumnConfigurationId(['id', 'name', 'status', 'secret']);
       await waitFor(() => expect(document.cookie).toContain(`datatable-config-${derived}=`));
     });
+
+    it('keeps body cells in sync with the header after toggling a column (memoized rows re-render)', async () => {
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columnsWithHidden}
+          enableColumnConfiguration
+          columnConfigCookieSuffix="memo-sync"
+        />
+      );
+
+      const headerCount = () => document.querySelectorAll('table.snow-table thead th').length;
+      const firstRowCellCount = () =>
+        document.querySelector('table.snow-table tbody tr')?.querySelectorAll('td').length ?? 0;
+
+      // Baseline: header and body render the same number of columns.
+      await waitFor(() => expect(firstRowCellCount()).toBe(headerCount()));
+      const baseline = headerCount();
+
+      // Hide a visible column via the config dropdown.
+      await toggleFirstColumn();
+
+      // The header dropped the column; the memoized body row must drop its cell too — not keep a
+      // stale one (TanStack reuses the row reference across a visibility change).
+      await waitFor(() => expect(headerCount()).toBe(baseline - 1));
+      expect(firstRowCellCount()).toBe(headerCount());
+    });
   });
 
   describe('topbar customization (renderTopbar)', () => {
