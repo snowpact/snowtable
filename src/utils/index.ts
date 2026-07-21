@@ -12,5 +12,5 @@ export {
   saveColumnConfiguration,
   loadColumnConfiguration,
   deleteColumnConfiguration,
-  generateColumnConfigurationId,
+  deriveColumnConfigurationId,
 } from './columnConfig';

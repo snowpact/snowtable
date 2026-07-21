@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SnowClientDataTable } from './SnowClientDataTable';
 import { SnowColumnConfig } from './types';
+import { deriveColumnConfigurationId } from './utils';
 
 import { renderWithProviders, screen, userEvent, waitFor } from './test/test-utils';
 
@@ -424,5 +425,52 @@ describe('SnowClientDataTable with persistState', () => {
     // "All" tab should be selected (first prefilter = default)
     const allTab = screen.getByText('All').closest('button');
     expect(allTab).toHaveAttribute('data-state', 'active');
+  });
+});
+
+describe('SnowClientDataTable column configuration cookie', () => {
+  // Two tables can legitimately share the very same columns for different resources (e.g. the
+  // checkout-session tables in ditib-si), so the cookie is scoped by queryKey, not by columns.
+  const plantConfigCookie = (queryKey: string[], visibility: Record<string, boolean>) => {
+    const cookieId = deriveColumnConfigurationId(queryKey);
+    document.cookie = `datatable-config-${cookieId}=${encodeURIComponent(JSON.stringify(visibility))}; path=/`;
+  };
+
+  beforeEach(() => {
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.split('=');
+      document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+  });
+
+  const renderTable = (queryKey: string[]) =>
+    renderWithProviders(
+      <SnowClientDataTable
+        queryKey={queryKey}
+        columnConfig={columnConfig}
+        fetchAllItemsEndpoint={vi.fn().mockResolvedValue(mockData)}
+        enableColumnConfiguration
+      />
+    );
+
+  // The responsive layout also renders column labels, so target the real `<th>`.
+  const emailHeaders = () => screen.queryAllByRole('columnheader', { name: 'Email' });
+
+  it('applies the configuration saved under its own queryKey', async () => {
+    plantConfigCookie(['table-a'], { email: false });
+
+    renderTable(['table-a']);
+
+    await screen.findByTestId('datatable');
+    await waitFor(() => expect(emailHeaders()).toHaveLength(0));
+  });
+
+  it('does not share the cookie with a table that has identical columns but another queryKey', async () => {
+    plantConfigCookie(['table-a'], { email: false });
+
+    renderTable(['table-b']);
+
+    await screen.findByTestId('datatable');
+    await waitFor(() => expect(emailHeaders().length).toBeGreaterThan(0));
   });
 });

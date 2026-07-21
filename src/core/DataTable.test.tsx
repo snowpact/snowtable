@@ -2,6 +2,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataTable } from './DataTable';
+import { deriveColumnConfigurationId } from '../utils/columnConfig';
 
 import { renderWithProviders, screen, userEvent, waitFor } from '../test/test-utils';
 
@@ -521,6 +522,95 @@ describe('DataTable', () => {
 
       // Column configuration button should be present
       expect(screen.getByTestId('datatable')).toBeInTheDocument();
+    });
+
+    // A table with a `defaultHidden` column, so a leak is directly observable in the header.
+    const columnsWithHidden: ColumnDef<TestItem>[] = [
+      ...columns,
+      { accessorKey: 'secret', header: 'Secret', meta: { defaultHidden: true } },
+    ];
+
+    const plantConfigCookie = (cookieSuffix: string, visibility: Record<string, boolean>) => {
+      document.cookie = `datatable-config-${cookieSuffix}=${encodeURIComponent(JSON.stringify(visibility))}; path=/`;
+    };
+
+    // Cookies outlive a test, so a planted config would bleed into the next one.
+    beforeEach(() => {
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.split('=');
+        document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      });
+    });
+    // The responsive layout also renders column labels, so target the real `<th>`.
+    const secretHeaders = () => screen.queryAllByRole('columnheader', { name: 'Secret' });
+
+    it('reads the column configuration saved under its own cookie suffix', async () => {
+      plantConfigCookie('table-a', { secret: true });
+
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columnsWithHidden}
+          enableColumnConfiguration
+          columnConfigCookieSuffix="table-a"
+        />
+      );
+
+      // The saved value wins over defaultHidden, so the cookie was really read.
+      await waitFor(() => expect(secretHeaders().length).toBeGreaterThan(0));
+    });
+
+    it('ignores a column configuration saved by a different table (regression: shared cookie)', async () => {
+      // Same payload, stored under another table's suffix. Before the fix every table derived
+      // its suffix from the (minified) call stack, collapsed to one shared key, and read this.
+      plantConfigCookie('table-a', { secret: true });
+
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columnsWithHidden}
+          enableColumnConfiguration
+          columnConfigCookieSuffix="table-b"
+        />
+      );
+
+      await waitFor(() => expect(secretHeaders()).toHaveLength(0));
+    });
+
+    // Toggling a column is the only thing that writes the cookie — nothing is written on mount.
+    const toggleFirstColumn = async () => {
+      const user = userEvent.setup();
+      await user.click(screen.getAllByRole('button').find(b => b.querySelector('svg')) as HTMLElement);
+      const item = await screen.findByRole('menuitemcheckbox', { name: 'Name' });
+      await user.click(item);
+    };
+
+    it('writes the cookie under the given suffix when a column is toggled', async () => {
+      renderWithProviders(
+        <DataTable
+          data={mockData}
+          columns={columnsWithHidden}
+          enableColumnConfiguration
+          columnConfigCookieSuffix="table-a"
+        />
+      );
+
+      await toggleFirstColumn();
+
+      await waitFor(() => expect(document.cookie).toContain('datatable-config-table-a='));
+    });
+
+    it('falls back to a column-set-derived suffix when none is given', async () => {
+      renderWithProviders(
+        <DataTable data={mockData} columns={columnsWithHidden} enableColumnConfiguration />
+      );
+
+      await toggleFirstColumn();
+
+      // Persistence still works out of the box, keyed on this table's columns rather than on the
+      // call stack — so a table with a different column set cannot land on the same cookie.
+      const derived = deriveColumnConfigurationId(['id', 'name', 'status', 'secret']);
+      await waitFor(() => expect(document.cookie).toContain(`datatable-config-${derived}=`));
     });
   });
 
