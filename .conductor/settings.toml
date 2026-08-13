@@ -1,0 +1,15 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+# Fresh Conductor workspaces start without node_modules — install so the run script below works.
+setup = "pnpm install"
+# The demo runs on a per-workspace port, so several workspaces can preview it at once.
+run_mode = "concurrent"
+
+[scripts.run.demo]
+# Vite demo playground. `--base /` serves it at the workspace port root for the Conductor preview
+# (the committed base '/snowtable/' is only for the deployed GitHub Pages build).
+command = "pnpm demo:dev --port $CONDUCTOR_PORT --base /"
+available_in = [ "local" ]
+default = true
+icon = "play"

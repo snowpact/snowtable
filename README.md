@@ -506,6 +506,7 @@ const columns: SnowColumnConfig<User>[] = [
 | `defaultSortBy`             | `string`                | -        | Initial sort column             |
 | `defaultSortOrder`          | `'asc' \| 'desc'`       | `'asc'`  | Initial sort direction          |
 | `className`                 | `string`                 | -        | CSS class on root wrapper (scoped theming) |
+| `subHeader`                 | `(ctx) => Partial<Record<keyof T, ReactNode>>` | -        | Row under the header (subtotals) — see [Sub-header row](#sub-header-subtotals-row) |
 
 ### SnowServerDataTable Props
 
@@ -537,6 +538,44 @@ interface ServerPaginatedResponse<T> {
   totalItemCount: number;
 }
 ```
+
+## Sub-header (subtotals) row
+
+Render a row directly under the column headers — typically subtotals. The table only **places** the
+aligned row (it follows column order, widths, visibility and responsive automatically); **you** compute
+and format the values, exactly like a `render` cell. `subHeader` is the **same callback on both tables**:
+it receives `{ rows, filters }` and returns a `columnKey → content` map. Columns absent from the map get
+an empty cell; omit `subHeader` entirely for no row.
+
+```typescript
+type SnowSubHeaderContext<T> = {
+  rows: T[]; // client: all filtered rows (every page) · server: current page's items
+  filters: { search: string; columnFilters: Record<string, string[]>; prefilter?: string };
+};
+```
+
+- **Client** — `rows` is every filtered row across all pages, so the subtotals **react** to search and
+  filters (recomputed only when the filtered set changes; passing `rows` is a reference, not a copy).
+- **Server** — `rows` is the current page's items. For a whole-dataset total, return a value from your
+  own source (the server response, a dedicated query, …); `filters` is provided so you can keep it in sync.
+
+```tsx
+const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+<SnowClientDataTable
+  queryKey={['invoices']}
+  columnConfig={columns}
+  fetchAllItemsEndpoint={fetchInvoices}
+  subHeader={({ rows }) => ({
+    reference: 'Total', // a label is just another column's value — no special case
+    amount: usd(rows.reduce((sum, i) => sum + i.amount, 0)),
+    vat: usd(rows.reduce((sum, i) => sum + i.vat, 0)),
+  })}
+/>
+```
+
+Values can be plain strings or any `ReactNode` (`<strong>…</strong>`, a badge, …). The row's emphasis
+comes from the built-in `.snow-table-subheader-row` / `.snow-table-subheader-cell` styles.
 
 ## License
 
