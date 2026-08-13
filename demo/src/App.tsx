@@ -198,6 +198,7 @@ export function App() {
     enableRowClick: false,
     customTopbarOrder: false,
     enableSubHeader: false,
+    enableStickyActions: false,
     mobilePreview: false,
   });
 
@@ -313,6 +314,7 @@ export function App() {
     enablePagination: config.enablePagination,
     enableSorting: config.enableSorting,
     enableColumnConfiguration: config.enableColumnConfiguration,
+    enableStickyActions: config.enableStickyActions,
     persistState: config.persistState,
     defaultPageSize: 10,
     paginationSizes: [10, 25, 50, 100],

@@ -10,6 +10,7 @@ export interface DemoConfig {
   enableRowClick: boolean;
   customTopbarOrder: boolean;
   enableSubHeader: boolean;
+  enableStickyActions: boolean;
   mobilePreview: boolean;
 }
 
