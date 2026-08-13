@@ -177,6 +177,21 @@ export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onTh
             </div>
           </label>
 
+          <label className="flex items-start gap-3 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={config.enableSubHeader}
+              onChange={() => onToggle('enableSubHeader')}
+              className="w-4 h-4 mt-1 text-blue-500 rounded focus:ring-blue-500"
+            />
+            <div>
+              <span className="font-medium">Subtotals Row</span>
+              <p className="text-xs text-gray-400">
+                Sum the "Size of teams" column under the header
+              </p>
+            </div>
+          </label>
+
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"

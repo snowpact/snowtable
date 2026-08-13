@@ -93,6 +93,9 @@ export function generateTableCode(config: DemoConfig): string {
   if (config.enableSorting) props.push(`enableSorting`);
   if (config.enableColumnConfiguration) props.push(`enableColumnConfiguration`);
   if (config.persistState) props.push(`persistState`);
+  if (config.enableSubHeader) {
+    props.push(`subHeader={({ rows }) => ({ teamSize: \`Total : \${rows.reduce((sum, u) => sum + u.teamSize, 0)}\` })}`);
+  }
 
   if (config.customTopbarOrder) {
     props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration, resetFilters }) => (

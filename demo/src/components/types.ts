@@ -9,6 +9,7 @@ export interface DemoConfig {
   persistState: boolean;
   enableRowClick: boolean;
   customTopbarOrder: boolean;
+  enableSubHeader: boolean;
   mobilePreview: boolean;
 }
 
@@ -104,5 +105,6 @@ export interface User extends Record<string, unknown> {
   role: 'admin' | 'user' | 'guest';
   status: 'active' | 'inactive' | 'pending';
   department: string;
+  teamSize: number;
   createdAt: string;
 }

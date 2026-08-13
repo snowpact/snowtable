@@ -6,6 +6,7 @@ import {
   type SnowColumnConfig,
   type ServerFetchParams,
   type ServerPaginatedResponse,
+  type SnowSubHeaderContext,
   type TopbarElements,
 } from '@snowpact/snowtable';
 import { CodePanel, ConfigPanel, type DemoConfig, type User, type ThemeColors, defaultTheme } from './components';
@@ -48,6 +49,7 @@ const generateUsers = (count: number): User[] => {
     role: roles[i % roles.length],
     status: statuses[i % statuses.length],
     department: departments[i % departments.length],
+    teamSize: (i % 12) + 1,
     createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   }));
 };
@@ -151,6 +153,7 @@ const columns: SnowColumnConfig<User>[] = [
     ),
   },
   { key: 'department', label: 'Department' },
+  { key: 'teamSize', label: 'Size of teams' },
 ];
 
 // Filters configuration
@@ -194,6 +197,7 @@ export function App() {
     persistState: false,
     enableRowClick: false,
     customTopbarOrder: false,
+    enableSubHeader: false,
     mobilePreview: false,
   });
 
@@ -313,6 +317,11 @@ export function App() {
     defaultPageSize: 10,
     paginationSizes: [10, 25, 50, 100],
     displayTotalNumber: true,
+    ...(config.enableSubHeader && {
+      subHeader: ({ rows }: SnowSubHeaderContext<User>) => ({
+        teamSize: `Total : ${rows.reduce((sum, user) => sum + user.teamSize, 0)}`,
+      }),
+    }),
     ...(config.enableFilters && { filters }),
     ...(config.enablePrefilters && { prefilters }),
     ...(config.enablePrefilters &&
