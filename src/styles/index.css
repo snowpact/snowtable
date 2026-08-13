@@ -953,6 +953,45 @@
   align-items: center;
 }
 
+/* =============================================
+   STICKY ACTIONS (enableStickyActions)
+   Pin the actions to the right edge as a hover-revealed overlay. The actions column collapses to
+   zero width (reserving no space and adding nothing to the horizontal scroll extent) and the
+   buttons are absolutely positioned, appearing on row hover. Scoped to the table layout
+   (>= 640px container) so it is a no-op in responsive card mode / very narrow tables.
+   ============================================= */
+@container snow-table (min-width: 640px) {
+  .snow-sticky-actions .snow-table-actions-cell {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  /* The buttons overlay the right edge, out of flow (so the column reserves no width), hidden until
+     the row is hovered. */
+  .snow-sticky-actions .snow-table-row .snow-action-cell {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 1rem 0 2.5rem;
+    opacity: 0;
+    pointer-events: none;
+    /* Fade the left edge into the table instead of a hard shadow. */
+    background-image: linear-gradient(to right, transparent, var(--snow-table-surface) 2rem);
+    transition: opacity 150ms ease;
+  }
+  .snow-sticky-actions .snow-table-row:hover .snow-action-cell {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .snow-action-link {
   display: inline-flex;
   align-items: center;

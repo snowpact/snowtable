@@ -192,6 +192,21 @@ export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onTh
             </div>
           </label>
 
+          <label className="flex items-start gap-3 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={config.enableStickyActions}
+              onChange={() => onToggle('enableStickyActions')}
+              className="w-4 h-4 mt-1 text-blue-500 rounded focus:ring-blue-500"
+            />
+            <div>
+              <span className="font-medium">Sticky Actions on Scroll</span>
+              <p className="text-xs text-gray-400">
+                Pin the actions column and reveal it on hover when the table scrolls horizontally
+              </p>
+            </div>
+          </label>
+
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"

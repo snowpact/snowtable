@@ -507,6 +507,7 @@ const columns: SnowColumnConfig<User>[] = [
 | `defaultSortOrder`          | `'asc' \| 'desc'`       | `'asc'`  | Initial sort direction          |
 | `className`                 | `string`                 | -        | CSS class on root wrapper (scoped theming) |
 | `subHeader`                 | `(ctx) => Partial<Record<keyof T, ReactNode>>` | -        | Row under the header (subtotals) — see [Sub-header row](#sub-header-subtotals-row) |
+| `enableStickyActions`       | `boolean`               | `false`  | Hover-revealed action overlay pinned to the right edge (reserves no column width) |
 
 ### SnowServerDataTable Props
 
@@ -576,6 +577,27 @@ const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', curren
 
 Values can be plain strings or any `ReactNode` (`<strong>…</strong>`, a badge, …). The row's emphasis
 comes from the built-in `.snow-table-subheader-row` / `.snow-table-subheader-cell` styles.
+
+## Sticky actions on scroll
+
+On wide tables the actions column normally scrolls off the right edge. Set `enableStickyActions` to
+turn the actions into a **hover-revealed overlay pinned to the right edge**: the actions column
+reserves no width (so it adds nothing to the horizontal scroll), and the buttons appear at the right
+edge when you hover a row. In responsive card mode / very narrow tables it is a no-op. Pure opt-in,
+no extra markup:
+
+```tsx
+<SnowClientDataTable
+  queryKey={['users']}
+  columnConfig={columns}
+  actions={actions}
+  fetchAllItemsEndpoint={fetchUsers}
+  enableStickyActions
+/>
+```
+
+Styling hooks: `.snow-sticky-actions` (added to the scroll wrapper when the mode is on) and
+`.snow-table-actions-cell` (on the actions column's cells).
 
 ## License
 

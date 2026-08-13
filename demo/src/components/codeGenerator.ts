@@ -96,6 +96,7 @@ export function generateTableCode(config: DemoConfig): string {
   if (config.enableSubHeader) {
     props.push(`subHeader={({ rows }) => ({ teamSize: \`Total : \${rows.reduce((sum, u) => sum + u.teamSize, 0)}\` })}`);
   }
+  if (config.enableStickyActions) props.push(`enableStickyActions`);
 
   if (config.customTopbarOrder) {
     props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration, resetFilters }) => (

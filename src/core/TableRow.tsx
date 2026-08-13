@@ -64,6 +64,7 @@ function TableRowInner<Data extends object>({
               onRowClick && !meta?.disableColumnClick && 'snow-cursor-pointer',
               meta?.center && 'snow-align-middle snow-text-center',
               meta?.maxWidth !== undefined && 'snow-cell-truncate',
+              cell.column.id === 'actions' && 'snow-table-actions-cell',
               enableResponsive
                 ? cn('snow-responsive-cell', isLastCell && 'snow-responsive-cell-last')
                 : 'snow-table-cell'
