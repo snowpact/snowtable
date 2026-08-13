@@ -36,6 +36,8 @@ import type { FilterConfig } from './SingleFilterDropdown';
 import { SingleFilterDropdown } from './SingleFilterDropdown';
 import { SortButton } from './SortButton';
 import { TableRow } from './TableRow';
+import { SubHeaderRow } from './SubHeaderRow';
+import type { SnowSubHeader, SnowSubHeaderContext } from '../types';
 
 /**
  * Pre-rendered topbar elements passed to {@link DataTableProps.renderTopbar}.
@@ -118,6 +120,10 @@ export type DataTableProps<T extends object> = {
     emptyTitle?: string;
   };
 
+  // === SUB-HEADER ===
+  /** Render a sub-header row under the column headers. See {@link SnowSubHeaderContext}. */
+  subHeader?: (ctx: SnowSubHeaderContext<T>) => SnowSubHeader<T>;
+
   // === TOPBAR ===
   /**
    * Customize the topbar layout and element ordering.
@@ -192,6 +198,8 @@ export function DataTable<Data extends object>({
   paginationSizes,
   enableResponsive = true,
   texts,
+  // Sub-header
+  subHeader,
   // Topbar
   renderTopbar,
   // Reset
@@ -480,6 +488,14 @@ export function DataTable<Data extends object>({
                 })}
               </tr>
             ))}
+            {subHeader && (
+              <SubHeaderRow
+                table={table}
+                subHeader={subHeader}
+                serverRows={serverSideMode ? data : undefined}
+                filters={{ search: globalFilter, columnFilters, prefilter: activePrefilter }}
+              />
+            )}
           </thead>
           {isLoading ? (
             <tbody className="snow-divide-y snow-divide-border" data-testid="datatable-loading">

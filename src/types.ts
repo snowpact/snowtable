@@ -52,6 +52,25 @@ export type SnowColumnConfig<T extends object> = {
   meta?: SnowColumnMeta;
 };
 
+/**
+ * A sub-header row rendered directly under the column headers: maps a column key to the
+ * content shown in that column (columns absent from the map render an empty cell).
+ */
+export type SnowSubHeader<T> = Partial<Record<keyof T, ReactNode>>;
+
+/**
+ * Context passed to the {@link BaseSnowTableProps.subHeader} callback.
+ */
+export type SnowSubHeaderContext<T> = {
+  /**
+   * Rows the table currently holds — all filtered rows across pages in client mode, the current
+   * page's items in server mode. The table computes nothing: build/format the values yourself.
+   */
+  rows: T[];
+  /** Current filter state, so the sub-header can be recomputed/displayed conditionally. */
+  filters: { search: string; columnFilters: Record<string, string[]>; prefilter?: string };
+};
+
 // ============================================
 // Action Types
 // ============================================
@@ -160,6 +179,15 @@ export interface BaseSnowTableProps<T extends Record<string, unknown>, K = unkno
    * Persist table state (prefilter, pagination, search, filters, sorting) in URL query params.
    */
   persistState?: boolean;
+  /**
+   * Render a sub-header row directly under the column headers. Receives the rows the table
+   * currently holds plus the active filters, and returns a `columnKey -> content` map. The table
+   * only places the (aligned) row — you compute and format the values. Omit for no row.
+   *
+   * @example
+   * subHeader={({ rows }) => ({ label: 'Total', amount: eur(rows.reduce((s, r) => s + r.amount, 0)) })}
+   */
+  subHeader?: (ctx: SnowSubHeaderContext<T>) => SnowSubHeader<T>;
 }
 
 // ============================================

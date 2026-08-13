@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SnowServerDataTable } from './SnowServerDataTable';
 import { ServerPaginatedResponse, SnowColumnConfig } from './types';
 
-import { renderWithProviders, screen, userEvent, waitFor } from './test/test-utils';
+import { renderWithProviders, screen, userEvent, waitFor, within } from './test/test-utils';
 
 // Store the current URL state for mocking
 let currentUrl = 'http://localhost:3000/';
@@ -67,6 +67,24 @@ const columnConfig: SnowColumnConfig<TestItem>[] = [
 ];
 
 describe('SnowServerDataTable', () => {
+  it('renders a subHeader row from the callback (current page items)', async () => {
+    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['subheader-server']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        subHeader={({ rows }) => ({ name: 'Total', status: String(rows.length) })}
+      />
+    );
+
+    await screen.findByText('Server Item 1'); // wait for data to load
+    const row = screen.getByTestId('datatable-subheader');
+    expect(within(row).getByText('Total')).toBeInTheDocument();
+    expect(within(row).getByText('3')).toBeInTheDocument(); // items on the current page
+  });
+
   it('should render DataTable with server data', async () => {
     const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
 
