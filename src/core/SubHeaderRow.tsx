@@ -56,7 +56,8 @@ export function SubHeaderRow<Data extends object>({
             key={column.id}
             className={cn(
               'snow-table-subheader-cell',
-              meta?.center && 'snow-align-middle snow-text-center'
+              meta?.center && 'snow-align-middle snow-text-center',
+              column.id === 'actions' && 'snow-table-actions-cell'
             )}
           >
             {content[column.id as keyof Data]}

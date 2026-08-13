@@ -129,6 +129,13 @@ export interface DataTableUIOptions<T extends object> {
   enableColumnConfiguration?: boolean;
   enablePagination?: boolean;
   enableResponsive?: boolean;
+  /**
+   * Pin the actions to the right edge as a hover-revealed overlay (no reserved column width), so
+   * they stay reachable when the table scrolls horizontally. On row hover the buttons appear at the
+   * right edge; otherwise the column takes no space. No-op in responsive card mode / very narrow
+   * tables. Opt-in; default `false`.
+   */
+  enableStickyActions?: boolean;
   paginationSizes?: number[];
   texts?: {
     searchPlaceholder?: string;

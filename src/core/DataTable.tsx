@@ -115,6 +115,12 @@ export type DataTableProps<T extends object> = {
   enablePagination?: boolean;
   paginationSizes?: number[];
   enableResponsive?: boolean;
+  /**
+   * Pin the actions to the right edge as a hover-revealed overlay (no reserved column width), so
+   * they stay reachable when the table scrolls horizontally. No-op in responsive card mode / very
+   * narrow tables. Opt-in; default `false`.
+   */
+  enableStickyActions?: boolean;
   texts?: {
     searchPlaceholder?: string;
     emptyTitle?: string;
@@ -197,6 +203,7 @@ export function DataTable<Data extends object>({
   enablePagination = true,
   paginationSizes,
   enableResponsive = true,
+  enableStickyActions = false,
   texts,
   // Sub-header
   subHeader,
@@ -457,7 +464,8 @@ export function DataTable<Data extends object>({
       <div
         className={cn(
           'snow-table-wrapper',
-          enableResponsive && 'snow-responsive-container'
+          enableResponsive && 'snow-responsive-container',
+          enableStickyActions && 'snow-sticky-actions'
         )}
       >
         <table className="snow-table" data-testid="datatable-table">
@@ -469,7 +477,11 @@ export function DataTable<Data extends object>({
                   return (
                   <th
                     key={header.id}
-                    className={cn('snow-table-header-cell', enableSorting && header.column.getCanSort() && 'snow-cursor-pointer')}
+                    className={cn(
+                      'snow-table-header-cell',
+                      enableSorting && header.column.getCanSort() && 'snow-cursor-pointer',
+                      header.column.id === 'actions' && 'snow-table-actions-cell'
+                    )}
                     onClick={header.column.getToggleSortingHandler()}
                     style={{
                       '--snow-col-width': meta?.width,
