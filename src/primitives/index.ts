@@ -9,3 +9,4 @@ export { Skeleton, type SkeletonProps } from './Skeleton';
 export { Select } from './Select';
 export { Tabs } from './Tabs';
 export { DropdownMenu } from './DropdownMenu';
+export { Popover } from './Popover';

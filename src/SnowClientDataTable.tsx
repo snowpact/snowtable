@@ -41,7 +41,6 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
     setColumnFilters,
     sorting,
     setSorting,
-    resetToDefaults,
   } = useTableStatePersist({
     enabled: persistState,
     defaultPrefilter: prefilters?.[0]?.id,
@@ -107,8 +106,6 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
       // Sorting
       sorting={sorting}
       onSortingChange={setSorting}
-      // Reset
-      onResetFilters={resetToDefaults}
       {...restProps}
     />
   );

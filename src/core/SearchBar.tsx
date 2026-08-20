@@ -2,12 +2,11 @@
  * Search bar component with debounce
  */
 
-import { Search } from '../icons';
+import { Search, X } from '../icons';
 import { useEffect, useState } from 'react';
 
 import { Input } from '../primitives/Input';
 import { getStyles } from '../registry';
-import { cn } from '../utils';
 
 const SEARCH_DEBOUNCE_MS = 500;
 
@@ -42,6 +41,11 @@ export function SearchBar({ value = '', onDebouncedChange, placeholder }: Search
 
   const hasContent = inputValue.length > 0;
 
+  const handleClear = () => {
+    setInputValue('');
+    onDebouncedChange?.('');
+  };
+
   return (
     <div className="snow-searchbar snow-lg:min-w-[331px]">
       <div className="snow-flex snow-relative">
@@ -55,7 +59,19 @@ export function SearchBar({ value = '', onDebouncedChange, placeholder }: Search
           className={getStyles().searchBar || undefined}
         />
         <span className="snow-searchbar-icon">
-          <Search className={cn(hasContent ? 'snow-state-active-text' : 'snow-text-muted-foreground')} />
+          {hasContent ? (
+            <button
+              type="button"
+              className="snow-searchbar-clear"
+              onClick={handleClear}
+              aria-label="Clear search"
+              data-testid="data-table-search-clear"
+            >
+              <X />
+            </button>
+          ) : (
+            <Search className="snow-text-muted-foreground" />
+          )}
         </span>
       </div>
     </div>

@@ -58,8 +58,10 @@
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.14",
+    "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-select": "^2.2.4",
     "@radix-ui/react-tabs": "^1.1.12",
+    "@rehookify/datepicker": "^6.6.8",
     "@tanstack/match-sorter-utils": "^8.19.4"
   },
   "devDependencies": {

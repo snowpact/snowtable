@@ -108,6 +108,11 @@ describe('filter utils', () => {
       const decoded = decodeFiltersFromParam(encoded);
       expect(decoded).toEqual(filters);
     });
+
+    it('should round-trip values containing the , : | delimiters (text filters)', () => {
+      const filters = { name: ['Doe, John'], q: ['a:b|c'] };
+      expect(decodeFiltersFromParam(encodeFiltersToParam(filters))).toEqual(filters);
+    });
   });
 
   describe('redirectToPageWithParam', () => {

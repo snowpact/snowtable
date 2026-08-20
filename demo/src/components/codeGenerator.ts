@@ -99,7 +99,7 @@ export function generateTableCode(config: DemoConfig): string {
   if (config.enableStickyActions) props.push(`enableStickyActions`);
 
   if (config.customTopbarOrder) {
-    props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration, resetFilters }) => (
+    props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration }) => (
     <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         {filters}
@@ -109,7 +109,6 @@ export function generateTableCode(config: DemoConfig): string {
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         {search}
         {columnConfiguration}
-        {resetFilters}
       </div>
     </div>
   )}`);

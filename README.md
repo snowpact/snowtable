@@ -55,6 +55,7 @@ setupSnowTable({
 | `dataTable.paginationSize`       | "per page"         |
 | `dataTable.columnsConfiguration` | "Columns"          |
 | `dataTable.resetFilters`         | "Reset filters"    |
+| `dataTable.reset`                | "Reset"            |
 | `dataTable.resetColumns`         | "Reset"            |
 | `dataTable.searchFilters`        | "Search..."        |
 | `dataTable.searchEmpty`          | "No results found" |
@@ -98,6 +99,48 @@ const columns: SnowColumnConfig<User>[] = [
 ```
 
 That's it! You have a working data table.
+
+---
+
+## Filters
+
+Declare filters with the `filters` prop. The table renders a **"Filters (n)"** toggle in the topbar that reveals a panel with the filter controls. Three types are supported:
+
+```tsx
+import { SnowClientDataTable, type FilterConfig } from '@snowpact/snowtable';
+
+const filters: FilterConfig<User>[] = [
+  // Categorical multi-select (the default — `type` may be omitted)
+  {
+    key: 'status',
+    label: 'Status',
+    multipleSelection: true,
+    options: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+    ],
+  },
+  // Free-text "contains" (case-insensitive, SQL LIKE-style)
+  { key: 'email', label: 'Email', type: 'text', placeholder: 'Filter email…' },
+  // Date range over an ISO 'YYYY-MM-DD' column
+  { key: 'createdAt', label: 'Created at', type: 'dateRange', minDate: '2020-01-01' },
+];
+
+<SnowClientDataTable /* … */ filters={filters} />;
+```
+
+- **`select`** (default): categorical multi-select from `options`.
+- **`text`**: free-text contains filter. The query is stored as `[query]`.
+- **`dateRange`**: calendar range over an ISO `'YYYY-MM-DD'` column. The value is `[from, to]`, both inclusive; a **single day is `[day, day]`** — click the same day twice, there are no open-ended ranges.
+
+In **server mode**, filters arrive in `fetchServerEndpoint`'s `params.filters` as `Record<string, string[]>` (e.g. `{ status: ['active'], email: ['ali'], createdAt: ['2024-01-01', '2024-12-31'] }`) — interpret each key according to its type.
+
+### Reset wording
+
+Two distinct actions, on purpose:
+
+- Each **individual** filter has its own **"Reset"** (`dataTable.reset`) that clears only that filter.
+- The panel's **"Reset filters"** (`dataTable.resetFilters`) clears **all** column filters at once — it does not touch the search or prefilters.
 
 ---
 

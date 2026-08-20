@@ -328,25 +328,6 @@ describe('SnowClientDataTable with persistState', () => {
     vi.clearAllMocks();
   });
 
-  it('should show reset button when enableGlobalSearch is true', async () => {
-    const fetchAllItemsEndpoint = vi.fn().mockResolvedValue(mockData);
-
-    renderWithProviders(
-      <SnowClientDataTable
-        queryKey={['test-persist']}
-        columnConfig={columnConfig}
-        fetchAllItemsEndpoint={fetchAllItemsEndpoint}
-        persistState
-        enableGlobalSearch
-      />
-    );
-
-    await screen.findByText('John Doe');
-
-    // Reset button should always be visible when enableGlobalSearch is true
-    expect(screen.getByTestId('datatable-reset-filters')).toBeInTheDocument();
-  });
-
   it('should persist prefilter to URL', async () => {
     const user = userEvent.setup();
     const fetchAllItemsEndpoint = vi.fn().mockResolvedValue(mockData);
@@ -401,48 +382,6 @@ describe('SnowClientDataTable with persistState', () => {
     // "Active" tab should be selected (has data-state="active")
     const activeTab = screen.getByText('Active').closest('button');
     expect(activeTab).toHaveAttribute('data-state', 'active');
-  });
-
-  it('should reset all state when reset button is clicked', async () => {
-    const user = userEvent.setup();
-    const fetchAllItemsEndpoint = vi.fn().mockResolvedValue(mockData);
-    const prefilters = [
-      { id: 'all', label: 'All' },
-      { id: 'active', label: 'Active' },
-    ];
-
-    // Pre-set URL with various values (use 'John' as search to match 'John Doe')
-    const params = new URLSearchParams();
-    params.set(storageKey('prefilter'), 'active');
-    params.set(storageKey('search'), 'John');
-    params.set(storageKey('page'), '2');
-    setupLocationMock(params.toString());
-
-    renderWithProviders(
-      <SnowClientDataTable
-        queryKey={['test-persist']}
-        columnConfig={columnConfig}
-        fetchAllItemsEndpoint={fetchAllItemsEndpoint}
-        prefilters={prefilters}
-        persistState
-        enableGlobalSearch
-      />
-    );
-
-    await screen.findByText('John Doe');
-
-    // Reset button should be visible because URL has active filters
-    const resetButton = screen.getByTestId('datatable-reset-filters');
-    await user.click(resetButton);
-
-    // URL params should be cleared
-    expect(getUrlParam(storageKey('prefilter'))).toBeNull();
-    expect(getUrlParam(storageKey('search'))).toBeNull();
-    expect(getUrlParam(storageKey('page'))).toBeNull();
-
-    // "All" tab should be selected (first prefilter = default)
-    const allTab = screen.getByText('All').closest('button');
-    expect(allTab).toHaveAttribute('data-state', 'active');
   });
 });
 

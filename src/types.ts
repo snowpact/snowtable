@@ -153,13 +153,12 @@ export interface DataTableUIOptions<T extends object> {
    * When omitted, the default `left / center / right` layout is used.
    *
    * @example
-   * renderTopbar={({ search, filters, columnConfiguration, resetFilters }) => (
+   * renderTopbar={({ search, filters, columnConfiguration }) => (
    *   <div className="snow-topbar-right">
    *     {filters}
    *     <MyExportButton />
    *     {search}
    *     {columnConfiguration}
-   *     {resetFilters}
    *   </div>
    * )}
    */

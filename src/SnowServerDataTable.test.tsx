@@ -282,25 +282,6 @@ describe('SnowServerDataTable with persistState', () => {
     vi.clearAllMocks();
   });
 
-  it('should show reset button when enableGlobalSearch is true', async () => {
-    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
-
-    renderWithProviders(
-      <SnowServerDataTable<TestItem, void>
-        queryKey={['test-server-persist']}
-        columnConfig={columnConfig}
-        fetchServerEndpoint={fetchServerEndpoint}
-        persistState
-        enableGlobalSearch
-      />
-    );
-
-    await screen.findByText('Server Item 1');
-
-    // Reset button should always be visible when enableGlobalSearch is true
-    expect(screen.getByTestId('datatable-reset-filters')).toBeInTheDocument();
-  });
-
   it('should persist prefilter to URL', async () => {
     const user = userEvent.setup();
     const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
@@ -387,52 +368,6 @@ describe('SnowServerDataTable with persistState', () => {
         prefilter: 'active',
       })
     );
-  });
-
-  it('should reset all state when reset button is clicked', async () => {
-    const user = userEvent.setup();
-    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
-    const prefilters = [
-      { id: 'all', label: 'All' },
-      { id: 'active', label: 'Active' },
-    ];
-
-    // Pre-set URL with various values
-    const params = new URLSearchParams();
-    params.set(storageKey('prefilter'), 'active');
-    params.set(storageKey('search'), 'test search');
-    params.set(storageKey('page'), '2');
-    params.set(storageKey('sortBy'), 'name');
-    params.set(storageKey('sortDesc'), 'true');
-    setupLocationMock(params.toString());
-
-    renderWithProviders(
-      <SnowServerDataTable<TestItem, void>
-        queryKey={['test-server-persist']}
-        columnConfig={columnConfig}
-        fetchServerEndpoint={fetchServerEndpoint}
-        prefilters={prefilters}
-        persistState
-        enableGlobalSearch
-      />
-    );
-
-    await screen.findByText('Server Item 1');
-
-    // Reset button should be visible because URL has active filters
-    const resetButton = screen.getByTestId('datatable-reset-filters');
-    await user.click(resetButton);
-
-    // URL params should be cleared
-    expect(getUrlParam(storageKey('prefilter'))).toBeNull();
-    expect(getUrlParam(storageKey('search'))).toBeNull();
-    expect(getUrlParam(storageKey('page'))).toBeNull();
-    expect(getUrlParam(storageKey('sortBy'))).toBeNull();
-    expect(getUrlParam(storageKey('sortDesc'))).toBeNull();
-
-    // "All" tab should be selected
-    const allTab = screen.getByText('All').closest('button');
-    expect(allTab).toHaveAttribute('data-state', 'active');
   });
 
   it('should persist sorting to URL', async () => {

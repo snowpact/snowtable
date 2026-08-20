@@ -29,6 +29,13 @@ export {
   PrefilterTabs,
   SearchBar,
   SingleFilterDropdown,
+  DateRangeFilter,
+  TextFilter,
+  Calendar,
+  isDateRangeFilter,
+  isTextFilter,
+  encodeDateRange,
+  decodeDateRange,
   SortButton,
 } from './core';
 export type {
@@ -40,7 +47,14 @@ export type {
   SearchBarProps,
   FilterOption,
   FilterConfig,
+  CategoricalFilterConfig,
+  DateRangeFilterConfig,
+  TextFilterConfig,
+  DateRangeValue,
   SingleFilterDropdownProps,
+  DateRangeFilterProps,
+  TextFilterProps,
+  CalendarProps,
   SortButtonProps,
 } from './core';
 

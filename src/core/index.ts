@@ -14,4 +14,17 @@ export {
   type FilterConfig,
   type SingleFilterDropdownProps,
 } from './SingleFilterDropdown';
+export { DateRangeFilter, type DateRangeFilterProps } from './DateRangeFilter';
+export { TextFilter, type TextFilterProps } from './TextFilter';
+export { Calendar, type CalendarProps } from './Calendar';
+export {
+  isDateRangeFilter,
+  isTextFilter,
+  encodeDateRange,
+  decodeDateRange,
+  type CategoricalFilterConfig,
+  type DateRangeFilterConfig,
+  type TextFilterConfig,
+  type DateRangeValue,
+} from './filterConfig';
 export { SortButton, type SortButtonProps } from './SortButton';
