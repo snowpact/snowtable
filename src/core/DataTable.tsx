@@ -51,8 +51,15 @@ export type TopbarElements = {
   prefilters: ReactNode;
   /** Global search input (center section by default). `null` if search disabled. */
   search: ReactNode;
-  /** Column filter dropdowns, one per configured filter. `null` if no filters. */
+  /** Column filter dropdowns, one per configured filter, rendered inline. `null` if no filters. */
   filters: ReactNode;
+  /**
+   * The "Filters (n)" toggle button. Clicking it opens the collapsible filter panel that the
+   * DataTable renders below the topbar (holding {@link filters} + a reset). Use this INSTEAD of
+   * {@link filters} in a custom `renderTopbar` to get the compact collapsible menu. `null` if no
+   * filters.
+   */
+  filtersToggle: ReactNode;
   /** Column visibility configuration button. `null` if disabled. */
   columnConfiguration: ReactNode;
 };
@@ -114,11 +121,13 @@ export type DataTableProps<T extends object> = {
   paginationSizes?: number[];
   enableResponsive?: boolean;
   /**
-   * Pin the actions to the right edge as a hover-revealed overlay (no reserved column width), so
-   * they stay reachable when the table scrolls horizontally. No-op in responsive card mode / very
-   * narrow tables. Opt-in; default `false`.
+   * How the actions column is displayed:
+   * - `'hover'` (default): pinned to the right edge and revealed on row hover (no reserved
+   *   column width), so actions stay reachable when the table scrolls horizontally.
+   * - `'visible'`: a normal actions column, always shown.
+   * No-op in responsive card mode / very narrow tables.
    */
-  enableStickyActions?: boolean;
+  actionsMode?: 'hover' | 'visible';
   texts?: {
     searchPlaceholder?: string;
     emptyTitle?: string;
@@ -197,7 +206,7 @@ export function DataTable<Data extends object>({
   enablePagination = true,
   paginationSizes,
   enableResponsive = true,
-  enableStickyActions = false,
+  actionsMode = 'hover',
   texts,
   // Sub-header
   subHeader,
@@ -398,6 +407,25 @@ export function DataTable<Data extends object>({
             />
           ))
         : null,
+    filtersToggle: hasFilters ? (
+      <Button
+        className={cn('snow-filter-btn', activeFilterCount > 0 && 'snow-state-active')}
+        onClick={() => setFiltersOpen(open => !open)}
+        data-testid="datatable-filters-toggle"
+      >
+        <Filter className={cn('snow-size-4 snow-shrink-0', activeFilterCount > 0 && 'snow-state-active-text')} />
+        <span className="snow-truncate">
+          {t('dataTable.filters')}
+          {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+        </span>
+        <ChevronDown
+          className={cn(
+            'snow-size-4 snow-shrink-0 snow-opacity-50 snow-filter-chevron',
+            filtersOpen && 'snow-filter-chevron-open'
+          )}
+        />
+      </Button>
+    ) : null,
     columnConfiguration: enableColumnConfiguration ? (
       <ColumnConfiguration table={table} cookieSuffix={columnConfigCookieSuffix} />
     ) : null,
@@ -431,36 +459,17 @@ export function DataTable<Data extends object>({
 
                 {/* Right: Filters toggle + column config */}
                 <div className="snow-topbar-right">
-                  {hasFilters && (
-                    <Button
-                      className={cn('snow-filter-btn', activeFilterCount > 0 && 'snow-state-active')}
-                      onClick={() => setFiltersOpen(open => !open)}
-                      data-testid="datatable-filters-toggle"
-                    >
-                      <Filter
-                        className={cn('snow-size-4 snow-shrink-0', activeFilterCount > 0 && 'snow-state-active-text')}
-                      />
-                      <span className="snow-truncate">
-                        {t('dataTable.filters')}
-                        {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          'snow-size-4 snow-shrink-0 snow-opacity-50 snow-filter-chevron',
-                          filtersOpen && 'snow-filter-chevron-open'
-                        )}
-                      />
-                    </Button>
-                  )}
+                  {topbarElements.filtersToggle}
                   {topbarElements.columnConfiguration}
                 </div>
               </>
             )}
           </div>
 
-          {/* Collapsible filter panel (default layout only). Its reset clears
-              only the column filters — not the search/prefilters. */}
-          {!renderTopbar && hasFilters && filtersOpen && (
+          {/* Collapsible filter panel — rendered below the topbar whenever the
+              "Filters" toggle is open (the default layout, or a custom renderTopbar
+              that places `filtersToggle`). Its reset clears only the column filters. */}
+          {hasFilters && filtersOpen && (
             <div className="snow-filter-panel" data-testid="datatable-filter-panel">
               {topbarElements.filters}
               {activeFilterCount > 0 && (
@@ -481,7 +490,7 @@ export function DataTable<Data extends object>({
         className={cn(
           'snow-table-wrapper',
           enableResponsive && 'snow-responsive-container',
-          enableStickyActions && 'snow-sticky-actions'
+          actionsMode === 'hover' && 'snow-sticky-actions'
         )}
       >
         <table className="snow-table" data-testid="datatable-table">

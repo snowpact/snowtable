@@ -2,6 +2,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataTable } from './DataTable';
+import type { FilterConfig } from './filterConfig';
 import { deriveColumnConfigurationId } from '../utils/columnConfig';
 
 import { renderWithProviders, screen, userEvent, waitFor } from '../test/test-utils';
@@ -772,5 +773,49 @@ describe('DataTable', () => {
       expect(firstRowCells[0]).toHaveClass('snow-cell-truncate');
     });
 
+  });
+
+  describe('typed filter fns (client)', () => {
+    type Row = { id: string; email: string; createdAt: string };
+    const rows: Row[] = [
+      { id: '1', email: 'alice@example.com', createdAt: '2024-01-15' },
+      { id: '2', email: 'bob@example.com', createdAt: '2024-06-20' },
+      { id: '3', email: 'carol@test.com', createdAt: '2024-12-05' },
+    ];
+    // filterFn strings resolve against DataTable's registered filterFns (cast, as
+    // useSnowColumns does — the TanStack FilterFns type isn't augmented).
+    const cols = [
+      { accessorKey: 'email', header: 'Email', enableColumnFilter: true, filterFn: 'text' },
+      { accessorKey: 'createdAt', header: 'Created', enableColumnFilter: true, filterFn: 'dateRange' },
+    ] as unknown as ColumnDef<Row>[];
+    const filters: FilterConfig<Row>[] = [
+      { key: 'email', label: 'Email', type: 'text' },
+      { key: 'createdAt', label: 'Created', type: 'dateRange' },
+    ];
+
+    it('applies the text "contains" filter to the rows', () => {
+      renderWithProviders(
+        <DataTable data={rows} columns={cols} filters={filters} columnFilters={{ email: ['example'] }} />
+      );
+
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+      expect(screen.getByText('bob@example.com')).toBeInTheDocument();
+      expect(screen.queryByText('carol@test.com')).not.toBeInTheDocument();
+    });
+
+    it('applies the dateRange filter to the rows (inclusive bounds)', () => {
+      renderWithProviders(
+        <DataTable
+          data={rows}
+          columns={cols}
+          filters={filters}
+          columnFilters={{ createdAt: ['2024-01-01', '2024-06-30'] }}
+        />
+      );
+
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+      expect(screen.getByText('bob@example.com')).toBeInTheDocument();
+      expect(screen.queryByText('carol@test.com')).not.toBeInTheDocument();
+    });
   });
 });

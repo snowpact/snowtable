@@ -144,6 +144,47 @@ Two distinct actions, on purpose:
 
 ---
 
+## Migrating to v2
+
+v2 overhauls the filter subsystem and the actions column.
+
+### Filters are now typed + collapsed behind a toggle
+
+`FilterConfig<T>` is a discriminated union (`type: 'select' | 'text' | 'dateRange'`, default `'select'`). **Constructing** categorical filters is unchanged, but if you *read* `.options` / `.multipleSelection` off a `FilterConfig<T>` value, narrow first:
+
+```ts
+if (!filter.type || filter.type === 'select') filter.options; // ok
+```
+
+Filters render inside a collapsible **"Filters (n)"** toggle by default (was inline). Custom `renderTopbar` layouts receive both the inline `filters` node **and** a `filtersToggle` node — the same collapsible **"Filters (n)"** button the default layout uses (its panel renders below the topbar automatically). Place one or the other, not both.
+
+### Reset: removed `onResetFilters` / `TopbarElements.resetFilters`
+
+The automatic "reset everything" topbar button is gone.
+
+```diff
+- <SnowClientDataTable onResetFilters={handleReset} />
+- renderTopbar={({ resetFilters }) => <div>{resetFilters}</div>}
+```
+
+Instead: each filter has its own **"Reset"** (`dataTable.reset`); the panel has **"Reset filters"** (`dataTable.resetFilters`) that clears all column filters. For a full reset (search + prefilters + filters + sorting), call `useTableStatePersist().resetToDefaults()` yourself. The per-filter reset i18n key changed from `dataTable.resetFilters` to `dataTable.reset` — add it if you localize.
+
+### Actions column: `enableStickyActions` → `actionsMode`
+
+```diff
+- <SnowClientDataTable enableStickyActions />
++ <SnowClientDataTable actionsMode="hover" />    {/* now the DEFAULT — can be omitted */}
++ <SnowClientDataTable actionsMode="visible" />  {/* previous default: a normal column */}
+```
+
+The default changed to `'hover'` (pinned to the right edge, revealed on row hover). Pass `actionsMode="visible"` for the old visible-column behavior.
+
+### New dependencies
+
+`@rehookify/datepicker` and `@radix-ui/react-popover` are added automatically (near-zero incremental weight — the Radix popover tree already ships via `dropdown-menu`).
+
+---
+
 ## Advanced Configuration
 
 ### Theme Customization
@@ -354,7 +395,9 @@ actions={[
 
 ---
 
-## Filters
+## Search & Prefilters
+
+> Column filters (categorical / text / date-range) have their own section: **[Filters](#filters)**.
 
 ### Global Search
 
@@ -362,32 +405,6 @@ actions={[
 <SnowClientDataTable
   enableGlobalSearch
   texts={{ searchPlaceholder: 'Search users...' }}
-/>
-```
-
-### Column Filters
-
-```tsx
-<SnowClientDataTable
-  filters={[
-    {
-      key: 'status',
-      label: 'Status',
-      multipleSelection: true,  // Allow multiple values
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-      ],
-    },
-    {
-      key: 'role',
-      label: 'Role',
-      options: [
-        { value: 'admin', label: 'Admin' },
-        { value: 'user', label: 'User' },
-      ],
-    },
-  ]}
 />
 ```
 
@@ -550,7 +567,7 @@ const columns: SnowColumnConfig<User>[] = [
 | `defaultSortOrder`          | `'asc' \| 'desc'`       | `'asc'`  | Initial sort direction          |
 | `className`                 | `string`                 | -        | CSS class on root wrapper (scoped theming) |
 | `subHeader`                 | `(ctx) => Partial<Record<keyof T, ReactNode>>` | -        | Row under the header (subtotals) — see [Sub-header row](#sub-header-subtotals-row) |
-| `enableStickyActions`       | `boolean`               | `false`  | Hover-revealed action overlay pinned to the right edge (reserves no column width) |
+| `actionsMode`               | `'hover' \| 'visible'` | `'hover'` | Actions display: `'hover'` (pinned, revealed on hover, reserves no width) or `'visible'` (normal column) |
 
 ### SnowServerDataTable Props
 
@@ -621,13 +638,13 @@ const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', curren
 Values can be plain strings or any `ReactNode` (`<strong>…</strong>`, a badge, …). The row's emphasis
 comes from the built-in `.snow-table-subheader-row` / `.snow-table-subheader-cell` styles.
 
-## Sticky actions on scroll
+## Actions column display (`actionsMode`)
 
-On wide tables the actions column normally scrolls off the right edge. Set `enableStickyActions` to
-turn the actions into a **hover-revealed overlay pinned to the right edge**: the actions column
-reserves no width (so it adds nothing to the horizontal scroll), and the buttons appear at the right
-edge when you hover a row. In responsive card mode / very narrow tables it is a no-op. Pure opt-in,
-no extra markup:
+Actions default to **`actionsMode="hover"`**: on wide tables the actions column is a hover-revealed
+overlay pinned to the right edge — it reserves no width (so it adds nothing to the horizontal scroll)
+and the buttons appear when you hover a row. In responsive card mode / very narrow tables it is a no-op.
+
+Pass **`actionsMode="visible"`** for a normal, visible actions column:
 
 ```tsx
 <SnowClientDataTable
@@ -635,11 +652,11 @@ no extra markup:
   columnConfig={columns}
   actions={actions}
   fetchAllItemsEndpoint={fetchUsers}
-  enableStickyActions
+  actionsMode="visible"  {/* omit for the default hover overlay */}
 />
 ```
 
-Styling hooks: `.snow-sticky-actions` (added to the scroll wrapper when the mode is on) and
+Styling hooks: `.snow-sticky-actions` (added to the scroll wrapper in `'hover'` mode) and
 `.snow-table-actions-cell` (on the actions column's cells).
 
 ## License

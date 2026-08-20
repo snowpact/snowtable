@@ -1134,8 +1134,19 @@
   align-items: center;
 }
 
+/* Keep the actions column from driving a taller row than the data cells: the
+   action buttons are shorter than a text cell, so drop the vertical padding and
+   let the data cells define the row height — consistent in both hover and column
+   modes. Two-class selectors so this wins over BOTH the base `.snow-table-cell`
+   padding and the responsive `.snow-responsive-cell` padding (which is what the
+   actions cell carries when `enableResponsive` is on — the default). */
+.snow-table-cell.snow-table-actions-cell,
+.snow-responsive-cell.snow-table-actions-cell {
+  padding-block: 0;
+}
+
 /* =============================================
-   STICKY ACTIONS (enableStickyActions)
+   STICKY ACTIONS (actionsMode: 'hover')
    Pin the actions to the right edge as a hover-revealed overlay. The actions column collapses to
    zero width (reserving no space and adding nothing to the horizontal scroll extent) and the
    buttons are absolutely positioned, appearing on row hover. Scoped to the table layout

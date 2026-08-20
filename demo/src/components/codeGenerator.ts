@@ -96,13 +96,13 @@ export function generateTableCode(config: DemoConfig): string {
   if (config.enableSubHeader) {
     props.push(`subHeader={({ rows }) => ({ teamSize: \`Total : \${rows.reduce((sum, u) => sum + u.teamSize, 0)}\` })}`);
   }
-  if (config.enableStickyActions) props.push(`enableStickyActions`);
+  if (config.actionsMode !== 'hover') props.push(`actionsMode="${config.actionsMode}"`);
 
   if (config.customTopbarOrder) {
-    props.push(`renderTopbar={({ prefilters, search, filters, columnConfiguration }) => (
+    props.push(`renderTopbar={({ prefilters, search, filtersToggle, columnConfiguration }) => (
     <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {filters}
+        {filtersToggle}
         <button onClick={() => alert('Custom topbar action!')}>⭐ Custom</button>
         {prefilters}
       </div>
@@ -135,6 +135,8 @@ export function generateTableCode(config: DemoConfig): string {
         { value: 'pending', label: 'Pending' },
       ],
     },
+    { key: 'email', label: 'Email', type: 'text', placeholder: 'Filter email…' },
+    { key: 'createdAt', label: 'Created at', type: 'dateRange' },
   ]}`);
   }
 

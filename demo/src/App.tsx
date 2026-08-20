@@ -227,7 +227,7 @@ export function App() {
     enableRowClick: false,
     customTopbarOrder: false,
     enableSubHeader: false,
-    enableStickyActions: false,
+    actionsMode: 'hover',
     mobilePreview: false,
   });
 
@@ -276,6 +276,10 @@ export function App() {
 
   const setMode = useCallback((mode: 'client' | 'server') => {
     setConfig(prev => ({ ...prev, mode }));
+  }, []);
+
+  const setActionsMode = useCallback((actionsMode: 'hover' | 'visible') => {
+    setConfig(prev => ({ ...prev, actionsMode }));
   }, []);
 
   const actions = [
@@ -343,7 +347,7 @@ export function App() {
     enablePagination: config.enablePagination,
     enableSorting: config.enableSorting,
     enableColumnConfiguration: config.enableColumnConfiguration,
-    enableStickyActions: config.enableStickyActions,
+    actionsMode: config.actionsMode,
     persistState: config.persistState,
     defaultPageSize: 10,
     paginationSizes: [10, 25, 50, 100],
@@ -364,10 +368,10 @@ export function App() {
     }),
     // Custom topbar order: filters + a custom button moved to the left, search to the right.
     ...(config.customTopbarOrder && {
-      renderTopbar: ({ prefilters, search, filters, columnConfiguration }: TopbarElements) => (
+      renderTopbar: ({ prefilters, search, filtersToggle, columnConfiguration }: TopbarElements) => (
         <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {filters}
+            {filtersToggle}
             <button
               onClick={() => alert('Custom topbar action!')}
               style={{
@@ -501,6 +505,7 @@ export function App() {
           config={config}
           onToggle={toggleConfig}
           onModeChange={setMode}
+          onActionsModeChange={setActionsMode}
           currentTheme={currentThemeName}
           onThemeChange={handleThemeChange}
         />
