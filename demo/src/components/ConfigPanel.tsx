@@ -5,11 +5,12 @@ interface ConfigPanelProps {
   config: DemoConfig;
   onToggle: (key: keyof DemoConfig) => void;
   onModeChange: (mode: 'client' | 'server') => void;
+  onActionsModeChange: (mode: 'hover' | 'visible') => void;
   currentTheme: string;
   onThemeChange: (themeName: string, theme: ThemeColors) => void;
 }
 
-export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onThemeChange }: ConfigPanelProps) {
+export function ConfigPanel({ config, onToggle, onModeChange, onActionsModeChange, currentTheme, onThemeChange }: ConfigPanelProps) {
   return (
     <div className="bg-gray-700 text-white p-4 h-full overflow-y-auto custom-scrollbar">
       <h2 className="text-lg font-semibold mb-4 border-b border-gray-500 pb-2">
@@ -192,20 +193,18 @@ export function ConfigPanel({ config, onToggle, onModeChange, currentTheme, onTh
             </div>
           </label>
 
-          <label className="flex items-start gap-3 cursor-pointer mb-3">
-            <input
-              type="checkbox"
-              checked={config.enableStickyActions}
-              onChange={() => onToggle('enableStickyActions')}
-              className="w-4 h-4 mt-1 text-blue-500 rounded focus:ring-blue-500"
-            />
-            <div>
-              <span className="font-medium">Sticky Actions on Scroll</span>
-              <p className="text-xs text-gray-400">
-                Pin the actions column and reveal it on hover when the table scrolls horizontally
-              </p>
-            </div>
-          </label>
+          <div className="mb-3">
+            <span className="font-medium block mb-1">Actions Column (actionsMode)</span>
+            <select
+              value={config.actionsMode}
+              onChange={e => onActionsModeChange(e.target.value as 'hover' | 'visible')}
+              className="w-full px-2 py-1.5 text-sm rounded bg-gray-600 text-white border border-gray-500 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="hover">hover</option>
+              <option value="visible">visible</option>
+            </select>
+            <p className="text-xs text-gray-400 mt-1">How the actions column is displayed</p>
+          </div>
 
           <label className="flex items-start gap-3 cursor-pointer">
             <input

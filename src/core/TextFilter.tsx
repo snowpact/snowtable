@@ -4,7 +4,7 @@
  * the query is stored as `[query]` in the shared filter-state record.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ChevronDown, Search } from '../icons';
 import { Button } from '../primitives/Button';
@@ -30,13 +30,18 @@ export function TextFilter<T extends object>({ filter, selectedValues, onFilterC
   // Keep the input in sync when the committed value changes externally (reset, URL…).
   useEffect(() => setText(committed), [committed]);
 
+  // Latest change handler in a ref so a parent re-render (which recreates
+  // `onFilterChange`) doesn't reset the debounce timer and starve the commit.
+  const onFilterChangeRef = useRef(onFilterChange);
+  onFilterChangeRef.current = onFilterChange;
+
   // Debounce commits so we don't filter (or refetch, in server mode) on every keystroke.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (text !== committed) onFilterChange(filter.key, text ? [text] : []);
+      if (text !== committed) onFilterChangeRef.current(filter.key, text ? [text] : []);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, committed, filter.key, onFilterChange]);
+  }, [text, committed, filter.key]);
 
   return (
     <Popover.Root>

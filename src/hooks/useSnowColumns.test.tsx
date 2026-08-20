@@ -208,10 +208,12 @@ describe('useSnowColumns', () => {
       const filters: FilterConfig<TestData>[] = [
         { type: 'dateRange', key: 'name', label: 'Created' },
         { key: 'status', label: 'Status', options: [] },
+        { type: 'text', key: 'email', label: 'Email' },
       ];
       const config: SnowColumnConfig<TestData>[] = [
         { key: 'name', label: 'Name' },
         { key: 'status', label: 'Status' },
+        { key: 'email', label: 'Email' },
       ];
 
       const { result } = renderHookWithProviders(() =>
@@ -221,6 +223,7 @@ describe('useSnowColumns', () => {
       const columns = result.current.columns as (InternalColumnDef<TestData> & { filterFn?: string })[];
       expect(columns[0].filterFn).toBe('dateRange'); // 'name' matched by the dateRange filter
       expect(columns[1].filterFn).toBe('multiSelect'); // 'status' matched by the categorical filter
+      expect(columns[2].filterFn).toBe('text'); // 'email' matched by the text filter
     });
   });
 
