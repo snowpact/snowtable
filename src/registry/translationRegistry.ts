@@ -7,7 +7,7 @@
 type TranslationFunction = (key: string) => string;
 
 // Default translations (English)
-const defaultTranslations: Record<string, string> = {
+const defaultTranslations = {
   'dataTable.search': 'Search...',
   'dataTable.elements': 'elements',
   'dataTable.paginationSize': 'per page',
@@ -22,7 +22,14 @@ const defaultTranslations: Record<string, string> = {
   'dataTable.apply': 'Apply',
   'dataTable.prevMonth': 'Previous month',
   'dataTable.nextMonth': 'Next month',
-};
+} satisfies Record<string, string>;
+
+/**
+ * Every UI string key SnowTable renders. Single source of truth for the public
+ * `translations` override type (see SetupSnowTableOptions) — deriving it here
+ * keeps the two from drifting when new keys are added.
+ */
+export type DataTableTranslationKey = keyof typeof defaultTranslations;
 
 // Custom translation function (optional)
 let customTranslateFn: TranslationFunction | null = null;
@@ -41,7 +48,7 @@ const translate = (key: string): string => {
     }
   }
   // Fallback to default translations
-  return defaultTranslations[key] ?? key;
+  return defaultTranslations[key as DataTableTranslationKey] ?? key;
 };
 
 export const setTranslationFunction = (fn: TranslationFunction) => {
@@ -57,7 +64,7 @@ export const resetTranslationRegistry = () => {
 /**
  * Set custom translations (merge with defaults)
  */
-export const setTranslations = (translations: Partial<typeof defaultTranslations>) => {
+export const setTranslations = (translations: Partial<Record<DataTableTranslationKey, string>>) => {
   Object.assign(defaultTranslations, translations);
 };
 

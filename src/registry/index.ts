@@ -8,7 +8,12 @@ import type { ComponentType } from 'react';
 
 import { registerLinkComponent, resetLinkRegistry, type LinkProps } from './linkRegistry';
 import { setStyles, resetStylesRegistry, type StylesConfig } from './stylesRegistry';
-import { setTranslationFunction, setTranslations, resetTranslationRegistry } from './translationRegistry';
+import {
+  setTranslationFunction,
+  setTranslations,
+  resetTranslationRegistry,
+  type DataTableTranslationKey,
+} from './translationRegistry';
 
 export interface SetupSnowTableOptions {
   /**
@@ -23,17 +28,7 @@ export interface SetupSnowTableOptions {
    * Custom translations to merge with defaults (optional)
    * Useful for simple overrides without a full i18n setup
    */
-  translations?: Partial<{
-    'dataTable.search': string;
-    'dataTable.elements': string;
-    'dataTable.paginationSize': string;
-    'dataTable.columnsConfiguration': string;
-    'dataTable.resetFilters': string;
-    'dataTable.resetColumns': string;
-    'dataTable.searchFilters': string;
-    'dataTable.searchEmpty': string;
-    'dataTable.selectFilter': string;
-  }>;
+  translations?: Partial<Record<DataTableTranslationKey, string>>;
 
   /**
    * Link component for navigation (required for actions with href)
