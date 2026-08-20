@@ -27,10 +27,20 @@ export const encodeFiltersToParam = (filters: Record<string, string[]>): string 
   for (const [key, values] of Object.entries(filters)) {
     const filteredValues = values.filter(v => v !== '');
     if (!key || filteredValues.length === 0) continue;
-    parts.push(`${key}:${filteredValues.join(',')}`);
+    // Encode keys/values so a value containing the `, : |` delimiters (e.g. a
+    // free-text filter query) round-trips without corrupting the compact format.
+    parts.push(`${encodeURIComponent(key)}:${filteredValues.map(encodeURIComponent).join(',')}`);
   }
 
   return parts.join('|');
+};
+
+const safeDecode = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 };
 
 /**
@@ -48,12 +58,17 @@ export const decodeFiltersFromParam = (param: string | null | undefined): Record
     .map(g => g.trim())
     .filter(Boolean);
   for (const group of groups) {
-    const [key, valuesPart] = group.split(':');
+    // Split on the FIRST colon only; values are percent-encoded so any `:` they
+    // contained is `%3A` and won't be mistaken for the key/values separator.
+    const separator = group.indexOf(':');
+    if (separator === -1) continue;
+    const key = safeDecode(group.slice(0, separator));
+    const valuesPart = group.slice(separator + 1);
     if (!key || !valuesPart) continue;
 
     const values = valuesPart
       .split(',')
-      .map(v => v.trim())
+      .map(v => safeDecode(v.trim()))
       .filter(Boolean);
 
     if (values.length > 0) {

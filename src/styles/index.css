@@ -501,7 +501,8 @@
    SHARED POPOVER STYLES (Select & Dropdown)
    ============================================= */
 .snow-select-content,
-.snow-dropdown-content {
+.snow-dropdown-content,
+.snow-popover-content {
   z-index: 50;
   min-width: 8rem;
   overflow: hidden;
@@ -527,23 +528,188 @@
 }
 
 .snow-select-content[data-state="open"],
-.snow-dropdown-content[data-state="open"] {
+.snow-dropdown-content[data-state="open"],
+.snow-popover-content[data-state="open"] {
   animation-name: snow-zoom-in;
 }
 
 .snow-select-content[data-state="closed"],
-.snow-dropdown-content[data-state="closed"] {
+.snow-dropdown-content[data-state="closed"],
+.snow-popover-content[data-state="closed"] {
   animation-name: snow-zoom-out;
 }
 
 .snow-select-content[data-side="bottom"],
-.snow-dropdown-content[data-side="bottom"] {
+.snow-dropdown-content[data-side="bottom"],
+.snow-popover-content[data-side="bottom"] {
   animation-name: snow-slide-in-from-top;
 }
 
 .snow-select-content[data-side="top"],
-.snow-dropdown-content[data-side="top"] {
+.snow-dropdown-content[data-side="top"],
+.snow-popover-content[data-side="top"] {
   animation-name: snow-slide-in-from-bottom;
+}
+
+/* =============================================
+   DATE RANGE FILTER — CALENDAR
+   ============================================= */
+.snow-filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--snow-table-border);
+  background-color: var(--snow-table-surface);
+}
+
+/* Filter buttons sit inline (auto width) inside the panel, not full-width. */
+.snow-filter-panel .snow-filter-btn {
+  width: auto;
+}
+
+.snow-filter-reset {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background-color: transparent;
+  color: var(--snow-table-muted);
+  font-size: 0.75rem;
+}
+
+.snow-filter-reset:hover {
+  color: var(--snow-table-foreground);
+}
+
+.snow-filter-chevron {
+  transition: transform 0.15s ease;
+}
+
+.snow-filter-chevron-open {
+  transform: rotate(180deg);
+}
+
+.snow-popover-content {
+  padding: 0.5rem;
+}
+
+.snow-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 16.5rem;
+  user-select: none;
+}
+
+.snow-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--snow-table-border);
+}
+
+.snow-calendar-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--snow-table-foreground);
+  text-transform: capitalize;
+}
+
+.snow-calendar-weekdays,
+.snow-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+}
+
+.snow-calendar-weekday {
+  padding: 0.25rem 0;
+  font-size: 0.6875rem;
+  color: var(--snow-table-muted);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.snow-calendar-day,
+.snow-calendar-day-blank {
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+}
+
+.snow-calendar-day {
+  border: none;
+  border-radius: var(--snow-table-radius);
+  background-color: transparent;
+  color: var(--snow-table-foreground);
+  cursor: pointer;
+}
+
+/* Hover must not override the selected/in-range colouring (higher specificity). */
+.snow-calendar-day:hover:not(:disabled):not(.snow-calendar-day-selected):not(.snow-calendar-day-in-range) {
+  background-color: var(--snow-table-surface);
+}
+
+.snow-calendar-day:focus {
+  outline: none;
+}
+
+.snow-calendar-day:focus-visible {
+  outline: 2px solid var(--snow-table-primary);
+  outline-offset: -2px;
+}
+
+.snow-calendar-day:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.snow-calendar-day-today {
+  border: 1px solid var(--snow-table-border);
+}
+
+.snow-calendar-day-in-range {
+  border-radius: 0;
+  background-color: color-mix(in srgb, var(--snow-table-primary) 15%, var(--snow-table-background));
+}
+
+.snow-calendar-day-selected {
+  background-color: var(--snow-table-primary);
+  color: var(--snow-table-background);
+}
+
+.snow-calendar-day-range-start {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.snow-calendar-day-range-end {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.snow-calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--snow-table-border);
+}
+
+.snow-calendar-apply {
+  background-color: var(--snow-table-primary);
+  border-color: var(--snow-table-primary);
+  color: var(--snow-table-background);
+}
+
+.snow-calendar-apply:hover {
+  opacity: 0.9;
 }
 
 /* =============================================
@@ -895,6 +1061,21 @@
 .snow-searchbar-icon svg {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+.snow-searchbar-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--snow-table-muted);
+  cursor: pointer;
+}
+
+.snow-searchbar-clear:hover {
+  color: var(--snow-table-foreground);
 }
 
 /* =============================================

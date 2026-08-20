@@ -349,98 +349,69 @@ describe('DataTable', () => {
   });
 
   describe('reset filters', () => {
-    it('should render reset button when enableGlobalSearch is true', () => {
-      const onResetFilters = vi.fn();
+    const filters = [
+      {
+        key: 'status' as keyof TestItem,
+        label: 'Status',
+        options: [{ value: 'active', label: 'Active' }],
+      },
+    ];
 
-      renderWithProviders(
-        <DataTable
-          data={mockData}
-          columns={columns}
-          enableGlobalSearch
-          onResetFilters={onResetFilters}
-        />
-      );
+    it('does not render a full-reset button in the topbar (layout C)', () => {
+      renderWithProviders(<DataTable data={mockData} columns={columns} enableGlobalSearch />);
 
-      expect(screen.getByTestId('datatable-reset-filters')).toBeInTheDocument();
+      expect(screen.queryByTestId('datatable-reset-filters')).not.toBeInTheDocument();
     });
 
-    it('should render reset button when prefilters are provided', () => {
-      const onResetFilters = vi.fn();
-      const prefilters = [
-        { id: 'all', label: 'All' },
-        { id: 'active', label: 'Active' },
-      ];
-
-      renderWithProviders(
-        <DataTable
-          data={mockData}
-          columns={columns}
-          prefilters={prefilters}
-          activePrefilter="all"
-          onPrefilterChange={vi.fn()}
-          onResetFilters={onResetFilters}
-        />
-      );
-
-      expect(screen.getByTestId('datatable-reset-filters')).toBeInTheDocument();
-    });
-
-    it('should render reset button when filters are provided', () => {
-      const onResetFilters = vi.fn();
-      const filters = [
-        {
-          key: 'status' as keyof TestItem,
-          label: 'Status',
-          options: [{ value: 'active', label: 'Active' }],
-        },
-      ];
-
+    it('shows no filters reset in the panel when no filter is active', async () => {
+      const user = userEvent.setup();
       renderWithProviders(
         <DataTable
           data={mockData}
           columns={columns}
           filters={filters}
-          onResetFilters={onResetFilters}
+          columnFilters={{}}
+          onColumnFiltersChange={vi.fn()}
         />
       );
 
-      expect(screen.getByTestId('datatable-reset-filters')).toBeInTheDocument();
+      await user.click(screen.getByTestId('datatable-filters-toggle'));
+      expect(screen.queryByTestId('datatable-filters-reset')).not.toBeInTheDocument();
     });
 
-    it('should call onResetFilters when button is clicked', async () => {
+    it('shows a filters reset in the panel when a filter is active', async () => {
       const user = userEvent.setup();
-      const onResetFilters = vi.fn();
-
       renderWithProviders(
         <DataTable
           data={mockData}
           columns={columns}
-          enableGlobalSearch
-          onResetFilters={onResetFilters}
+          filters={filters}
+          columnFilters={{ status: ['active'] }}
+          onColumnFiltersChange={vi.fn()}
         />
       );
 
-      await user.click(screen.getByTestId('datatable-reset-filters'));
-
-      expect(onResetFilters).toHaveBeenCalled();
+      await user.click(screen.getByTestId('datatable-filters-toggle'));
+      expect(screen.getByTestId('datatable-filters-reset')).toBeInTheDocument();
     });
 
-    it('should not render reset button when onResetFilters is not provided', () => {
+    it('clears only the column filters when the panel reset is clicked', async () => {
+      const user = userEvent.setup();
+      const onColumnFiltersChange = vi.fn();
       renderWithProviders(
-        <DataTable data={mockData} columns={columns} enableGlobalSearch />
+        <DataTable
+          data={mockData}
+          columns={columns}
+          filters={filters}
+          columnFilters={{ status: ['active'] }}
+          onColumnFiltersChange={onColumnFiltersChange}
+        />
       );
 
-      expect(screen.queryByTestId('datatable-reset-filters')).not.toBeInTheDocument();
-    });
+      await user.click(screen.getByTestId('datatable-filters-toggle'));
+      await user.click(screen.getByTestId('datatable-filters-reset'));
 
-    it('should not render reset button when no filter features are enabled', () => {
-      const onResetFilters = vi.fn();
-
-      renderWithProviders(
-        <DataTable data={mockData} columns={columns} onResetFilters={onResetFilters} />
-      );
-
-      expect(screen.queryByTestId('datatable-reset-filters')).not.toBeInTheDocument();
+      expect(onColumnFiltersChange).toHaveBeenCalledWith({});
     });
   });
 
@@ -457,9 +428,14 @@ describe('DataTable', () => {
       },
     ];
 
-    it('should render filter dropdown when filters are provided', () => {
+    it('should reveal filter dropdowns from the Filters toggle', async () => {
+      const user = userEvent.setup();
       renderWithProviders(<DataTable data={mockData} columns={columns} filters={filters} />);
 
+      // Filters are collapsed behind the toggle by default (layout C)
+      expect(screen.queryByText('Filter Status')).not.toBeInTheDocument();
+
+      await user.click(screen.getByTestId('datatable-filters-toggle'));
       expect(screen.getByText('Filter Status')).toBeInTheDocument();
     });
 
@@ -477,7 +453,8 @@ describe('DataTable', () => {
         />
       );
 
-      // Click on the filter dropdown
+      // Open the filter panel, then the filter dropdown
+      await user.click(screen.getByTestId('datatable-filters-toggle'));
       await user.click(screen.getByText('Filter Status'));
 
       // Click on an option

@@ -127,5 +127,29 @@ export const Settings = (props: IconProps) => (
   </Icon>
 );
 
+export const Calendar = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
+    <rect width="18" height="18" x="3" y="4" rx="2" />
+    <path d="M3 10h18" />
+  </Icon>
+);
+
+export const X = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </Icon>
+);
+
+export const Columns = (props: IconProps) => (
+  <Icon {...props}>
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M9 3v18" />
+    <path d="M15 3v18" />
+  </Icon>
+);
+
 // Alias for compatibility
 export const ChevronDownIcon = ChevronDown;

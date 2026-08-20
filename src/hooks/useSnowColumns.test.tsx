@@ -2,6 +2,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { describe, expect, it, vi } from 'vitest';
 
 import { useSnowColumns } from './useSnowColumns';
+import type { FilterConfig } from '../core/filterConfig';
 import { SnowColumnConfig, TableAction, IconComponent } from '../types';
 
 import { renderHookWithProviders } from '../test/test-utils';
@@ -201,6 +202,25 @@ describe('useSnowColumns', () => {
 
       expect(result.current.columns[0].enableColumnFilter).toBe(false);
       expect(result.current.columns[1].enableColumnFilter).toBe(true);
+    });
+
+    it('should select the filterFn based on the filter type', () => {
+      const filters: FilterConfig<TestData>[] = [
+        { type: 'dateRange', key: 'name', label: 'Created' },
+        { key: 'status', label: 'Status', options: [] },
+      ];
+      const config: SnowColumnConfig<TestData>[] = [
+        { key: 'name', label: 'Name' },
+        { key: 'status', label: 'Status' },
+      ];
+
+      const { result } = renderHookWithProviders(() =>
+        useSnowColumns<TestData, void>({ columnConfig: config, filters, mode: 'client' })
+      );
+
+      const columns = result.current.columns as (InternalColumnDef<TestData> & { filterFn?: string })[];
+      expect(columns[0].filterFn).toBe('dateRange'); // 'name' matched by the dateRange filter
+      expect(columns[1].filterFn).toBe('multiSelect'); // 'status' matched by the categorical filter
     });
   });
 

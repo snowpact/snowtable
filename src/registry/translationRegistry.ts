@@ -13,10 +13,15 @@ const defaultTranslations: Record<string, string> = {
   'dataTable.paginationSize': 'per page',
   'dataTable.columnsConfiguration': 'Columns',
   'dataTable.resetFilters': 'Reset filters',
+  'dataTable.reset': 'Reset',
   'dataTable.resetColumns': 'Reset',
   'dataTable.searchFilters': 'Search...',
   'dataTable.searchEmpty': 'No results found',
   'dataTable.selectFilter': 'Select...',
+  'dataTable.filters': 'Filters',
+  'dataTable.apply': 'Apply',
+  'dataTable.prevMonth': 'Previous month',
+  'dataTable.nextMonth': 'Next month',
 };
 
 // Custom translation function (optional)

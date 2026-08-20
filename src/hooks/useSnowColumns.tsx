@@ -99,18 +99,24 @@ export const useSnowColumns = <T extends Record<string, unknown>, K>({
     const cols = columnConfig
       .filter(column => !column.hidden)
       .map(column => {
-        const hasFilter = filters?.some(f => f.key === column.key);
+        const filterCfg = filters?.find(f => f.key === column.key);
 
         return {
           accessorKey: column.key as string,
           accessorFn: column.searchableValue ? (row: T) => column.searchableValue!(row) : undefined,
           header: column.label ?? t(`data.${column.key as string}`),
           enableSorting: column.sortable ?? true,
-          enableColumnFilter: hasFilter,
+          enableColumnFilter: !!filterCfg,
           // Client mode: enable global filter by default (use searchableValue if defined, otherwise use accessor)
           // Server mode: always false (server handles search)
           enableGlobalFilter: mode === 'client',
-          filterFn: hasFilter ? 'multiSelect' : undefined,
+          filterFn: filterCfg
+            ? filterCfg.type === 'dateRange'
+              ? 'dateRange'
+              : filterCfg.type === 'text'
+                ? 'text'
+                : 'multiSelect'
+            : undefined,
           meta: column.meta,
           cell: ({ row }: { row: { original: T } }) => {
             const value = row.original[column.key];

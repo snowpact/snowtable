@@ -8,6 +8,7 @@ import {
   type ServerPaginatedResponse,
   type SnowSubHeaderContext,
   type TopbarElements,
+  type FilterConfig,
 } from '@snowpact/snowtable';
 import { CodePanel, ConfigPanel, type DemoConfig, type User, type ThemeColors, defaultTheme } from './components';
 import { EditIcon, TrashIcon, EyeIcon, CopyIcon, MailIcon, ArchiveIcon } from './icons';
@@ -55,6 +56,7 @@ const generateUsers = (count: number): User[] => {
 };
 
 const allUsers = generateUsers(50);
+const createdAtValues = allUsers.map(u => u.createdAt).sort();
 
 // Fetch functions
 const fetchUsers = async (): Promise<User[]> => {
@@ -86,7 +88,20 @@ const fetchUsersServer = async (params: ServerFetchParams): Promise<ServerPagina
   // Apply filters
   if (params.filters) {
     Object.entries(params.filters).forEach(([key, values]) => {
-      if (values && values.length > 0) {
+      if (!values || values.length === 0) return;
+      if (key === 'createdAt') {
+        // Date range: positional [from, to], both inclusive (single day = [A, A]).
+        const [from, to] = values;
+        filtered = filtered.filter(u => {
+          if (from && u.createdAt < from) return false;
+          if (to && u.createdAt > to) return false;
+          return true;
+        });
+      } else if (key === 'email') {
+        // Text "contains" (LIKE) filter.
+        const query = (values[0] ?? '').toLowerCase();
+        filtered = filtered.filter(u => u.email.toLowerCase().includes(query));
+      } else {
         filtered = filtered.filter(u => values.includes(String(u[key as keyof User])));
       }
     });
@@ -154,10 +169,11 @@ const columns: SnowColumnConfig<User>[] = [
   },
   { key: 'department', label: 'Department' },
   { key: 'teamSize', label: 'Size of teams' },
+  { key: 'createdAt', label: 'Created at' },
 ];
 
 // Filters configuration
-const filters = [
+const filters: FilterConfig<User>[] = [
   {
     key: 'role' as const,
     label: 'Role',
@@ -176,6 +192,19 @@ const filters = [
       { value: 'inactive', label: 'Inactive' },
       { value: 'pending', label: 'Pending' },
     ],
+  },
+  {
+    key: 'createdAt' as const,
+    label: 'Created at',
+    type: 'dateRange',
+    minDate: createdAtValues[0],
+    maxDate: createdAtValues[createdAtValues.length - 1],
+  },
+  {
+    key: 'email' as const,
+    label: 'Email',
+    type: 'text',
+    placeholder: 'Filter email…',
   },
 ];
 
@@ -335,7 +364,7 @@ export function App() {
     }),
     // Custom topbar order: filters + a custom button moved to the left, search to the right.
     ...(config.customTopbarOrder && {
-      renderTopbar: ({ prefilters, search, filters, columnConfiguration, resetFilters }: TopbarElements) => (
+      renderTopbar: ({ prefilters, search, filters, columnConfiguration }: TopbarElements) => (
         <div className="snow-topbar-right" style={{ justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {filters}
@@ -357,7 +386,6 @@ export function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {search}
             {columnConfiguration}
-            {resetFilters}
           </div>
         </div>
       ),

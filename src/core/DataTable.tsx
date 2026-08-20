@@ -17,7 +17,7 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { FunnelX } from '../icons';
+import { ChevronDown, Filter } from '../icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -25,7 +25,7 @@ import { Button } from '../primitives/Button';
 import { Skeleton } from '../primitives/Skeleton';
 import { getT } from '../registry';
 import type { SearchMode } from '../utils';
-import { cn, fuzzyFilter, containsFilter } from '../utils';
+import { cn, fuzzyFilter, containsFilter, dateRangeFilter, textFilter } from '../utils';
 
 import { ColumnConfiguration } from './ColumnConfiguration';
 import { PageSizeSelector } from './PageSizeSelector';
@@ -33,7 +33,7 @@ import { DEFAULT_PAGE_SIZES, Pagination } from './Pagination';
 import { PreFilter, PrefilterTabs } from './PrefilterTabs';
 import { SearchBar } from './SearchBar';
 import type { FilterConfig } from './SingleFilterDropdown';
-import { SingleFilterDropdown } from './SingleFilterDropdown';
+import { FilterControl } from './FilterControl';
 import { SortButton } from './SortButton';
 import { TableRow } from './TableRow';
 import { SubHeaderRow } from './SubHeaderRow';
@@ -55,8 +55,6 @@ export type TopbarElements = {
   filters: ReactNode;
   /** Column visibility configuration button. `null` if disabled. */
   columnConfiguration: ReactNode;
-  /** Reset-all-filters button. `null` if there is nothing to reset. */
-  resetFilters: ReactNode;
 };
 
 export type DataTableProps<T extends object> = {
@@ -141,20 +139,16 @@ export type DataTableProps<T extends object> = {
    * When omitted, the default `left / center / right` layout is used.
    *
    * @example
-   * renderTopbar={({ search, filters, columnConfiguration, resetFilters }) => (
+   * renderTopbar={({ search, filters, columnConfiguration }) => (
    *   <div className="snow-topbar-right">
    *     {filters}
    *     <MyExportButton />
    *     {search}
    *     {columnConfiguration}
-   *     {resetFilters}
    *   </div>
    * )}
    */
   renderTopbar?: (elements: TopbarElements) => ReactNode;
-
-  // === RESET ===
-  onResetFilters?: () => void;
 
   // === STYLING ===
   /** Custom CSS class applied on the root wrapper. Useful for scoped theming. */
@@ -209,8 +203,6 @@ export function DataTable<Data extends object>({
   subHeader,
   // Topbar
   renderTopbar,
-  // Reset
-  onResetFilters,
   // Styling
   className,
 }: DataTableProps<Data>) {
@@ -225,6 +217,7 @@ export function DataTable<Data extends object>({
   const [internalColumnFilters, setInternalColumnFilters] = useState<Record<string, string[]>>({});
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = useState<VisibilityState>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Effective values (external prop OR internal state)
   const pagination = externalPagination ?? internalPagination;
@@ -334,24 +327,13 @@ export function DataTable<Data extends object>({
           getFilteredRowModel: getFilteredRowModel(),
           filterFns: {
             multiSelect: multiSelectFilter,
+            dateRange: dateRangeFilter,
+            text: textFilter,
           },
           globalFilterFn: enableGlobalSearch ? (searchMode === 'contains' ? containsFilter : fuzzyFilter) : undefined,
         }
       : {}),
   });
-
-  const handleFilterChange = (key: keyof Data, selectedValues: string[]) => {
-    const columnId = String(key);
-    const newFilters = { ...columnFilters };
-
-    if (selectedValues.length === 0) {
-      delete newFilters[columnId];
-    } else {
-      newFilters[columnId] = selectedValues;
-    }
-
-    onColumnFiltersChange(newFilters);
-  };
 
   const displayAdvancedBar =
     enableGlobalSearch ||
@@ -377,6 +359,13 @@ export function DataTable<Data extends object>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverSideMode, externalTotalCount, table, data.length, globalFilter, tanstackColumnFilters]);
 
+  // Whether the collapsible filter panel is available, and how many filters
+  // currently hold a value (shown in the "Filters (n)" toggle badge).
+  const hasFilters = !!(filters && filters.length > 0);
+  const activeFilterCount = filters
+    ? filters.filter(f => (columnFilters[String(f.key)]?.length ?? 0) > 0).length
+    : 0;
+
   // Pre-rendered topbar elements, exposed to a custom `renderTopbar` layout and
   // used by the default left/center/right layout. Each is `null` when its
   // underlying feature is disabled.
@@ -401,28 +390,17 @@ export function DataTable<Data extends object>({
     filters:
       filters && filters.length > 0
         ? filters.map(filter => (
-            <SingleFilterDropdown
+            <FilterControl
               key={String(filter.key)}
               filter={filter}
-              selectedValues={columnFilters[String(filter.key)]}
-              onFilterChange={handleFilterChange}
+              columnFilters={columnFilters}
+              onColumnFiltersChange={onColumnFiltersChange}
             />
           ))
         : null,
     columnConfiguration: enableColumnConfiguration ? (
       <ColumnConfiguration table={table} cookieSuffix={columnConfigCookieSuffix} />
     ) : null,
-    resetFilters:
-      (enableGlobalSearch || (prefilters && prefilters.length > 0) || (filters && filters.length > 0)) &&
-      onResetFilters ? (
-        <Button
-          onClick={onResetFilters}
-          title={t('dataTable.resetFilters')}
-          data-testid="datatable-reset-filters"
-        >
-          <FunnelX className="snow-size-4" />
-        </Button>
-      ) : null,
   };
 
   // Signature of the visible columns (ids + order). Passed to every memoized TableRow so a
@@ -439,26 +417,64 @@ export function DataTable<Data extends object>({
       {isFetching && !isLoading && <div className="snow-table-loading-overlay" />}
 
       {displayAdvancedBar && (
-        <div className="snow-table-top-bar">
-          {renderTopbar ? (
-            renderTopbar(topbarElements)
-          ) : (
-            <>
-              {/* Left: Prefilter tabs */}
-              <div className="snow-topbar-left">{topbarElements.prefilters}</div>
+        <>
+          <div className="snow-table-top-bar">
+            {renderTopbar ? (
+              renderTopbar(topbarElements)
+            ) : (
+              <>
+                {/* Left: Prefilter tabs */}
+                <div className="snow-topbar-left">{topbarElements.prefilters}</div>
 
-              {/* Center: Search bar */}
-              <div className="snow-topbar-center">{topbarElements.search}</div>
+                {/* Center: Search bar */}
+                <div className="snow-topbar-center">{topbarElements.search}</div>
 
-              {/* Right: Filters and actions */}
-              <div className="snow-topbar-right">
-                {topbarElements.filters}
-                {topbarElements.columnConfiguration}
-                {topbarElements.resetFilters}
-              </div>
-            </>
+                {/* Right: Filters toggle + column config */}
+                <div className="snow-topbar-right">
+                  {hasFilters && (
+                    <Button
+                      className={cn('snow-filter-btn', activeFilterCount > 0 && 'snow-state-active')}
+                      onClick={() => setFiltersOpen(open => !open)}
+                      data-testid="datatable-filters-toggle"
+                    >
+                      <Filter
+                        className={cn('snow-size-4 snow-shrink-0', activeFilterCount > 0 && 'snow-state-active-text')}
+                      />
+                      <span className="snow-truncate">
+                        {t('dataTable.filters')}
+                        {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          'snow-size-4 snow-shrink-0 snow-opacity-50 snow-filter-chevron',
+                          filtersOpen && 'snow-filter-chevron-open'
+                        )}
+                      />
+                    </Button>
+                  )}
+                  {topbarElements.columnConfiguration}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Collapsible filter panel (default layout only). Its reset clears
+              only the column filters — not the search/prefilters. */}
+          {!renderTopbar && hasFilters && filtersOpen && (
+            <div className="snow-filter-panel" data-testid="datatable-filter-panel">
+              {topbarElements.filters}
+              {activeFilterCount > 0 && (
+                <Button
+                  className="snow-filter-reset"
+                  onClick={() => onColumnFiltersChange({})}
+                  data-testid="datatable-filters-reset"
+                >
+                  {t('dataTable.resetFilters')}
+                </Button>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       <div

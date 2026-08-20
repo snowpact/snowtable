@@ -3,7 +3,7 @@
  */
 
 import { Table } from '@tanstack/react-table';
-import { Settings } from '../icons';
+import { Columns } from '../icons';
 import { useMemo, useEffect } from 'react';
 
 import { Button } from '../primitives/Button';
@@ -112,12 +112,12 @@ export function ColumnConfiguration<T extends object>({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <Button>
-          <Settings className="snow-size-4" />
+          <Columns className="snow-size-4" />
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="end" className="snow-w-56">
         <div className="snow-flex snow-items-center snow-gap-2 snow-px-2 snow-py-1\\.5 snow-text-sm snow-font-semibold">
-          <Settings className="snow-size-4" />
+          <Columns className="snow-size-4" />
           {t('dataTable.columnsConfiguration')}
         </div>
         <DropdownMenu.Separator />

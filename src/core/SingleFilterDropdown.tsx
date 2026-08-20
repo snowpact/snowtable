@@ -10,21 +10,12 @@ import { DropdownMenu } from '../primitives/DropdownMenu';
 import { Input } from '../primitives/Input';
 import { getT } from '../registry';
 import { cn } from '../utils';
+import type { CategoricalFilterConfig } from './filterConfig';
 
-export type FilterOption = {
-  label: string;
-  value: string;
-};
-
-export type FilterConfig<T extends object> = {
-  key: keyof T;
-  label: string;
-  options: FilterOption[];
-  multipleSelection?: boolean;
-};
+export type { FilterConfig, FilterOption } from './filterConfig';
 
 export interface SingleFilterDropdownProps<T extends object> {
-  filter: FilterConfig<T>;
+  filter: CategoricalFilterConfig<T>;
   selectedValues?: string[];
   onFilterChange: (key: keyof T, selectedValues: string[]) => void;
 }
@@ -147,7 +138,7 @@ export function SingleFilterDropdown<T extends object>({
           <>
             <DropdownMenu.Separator />
             <DropdownMenu.Item onClick={handleReset} className="snow-text-xs snow-cursor-pointer snow-text-center snow-text-muted-foreground">
-              {t('dataTable.resetFilters')}
+              {t('dataTable.reset')}
             </DropdownMenu.Item>
           </>
         )}
