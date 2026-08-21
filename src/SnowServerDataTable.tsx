@@ -48,17 +48,13 @@ export const SnowServerDataTable = <T extends Record<string, unknown>, K = unkno
   });
 
   // Expose the filters to the parent: fire on mount (incl. the value restored
-  // from the persisted URL) and on every change. The `emitted` ref skips the
-  // duplicate call React makes in StrictMode dev (the effect runs twice with the
-  // same reference); the callback ref lets its identity change without re-firing;
-  // destructuring the prop keeps it out of `restProps` so it never overrides the
-  // internal state setter.
+  // from the persisted URL) and on every change. The ref tracks the latest
+  // callback so its identity can change without re-firing; destructuring the
+  // prop keeps it out of `restProps` so it never overrides the internal setter.
+  // (React StrictMode double-fires this in dev — harmless, the callback is idempotent.)
   const onFiltersChangeRef = useRef(onFiltersChange);
   onFiltersChangeRef.current = onFiltersChange;
-  const emittedFiltersRef = useRef<Record<string, string[]> | undefined>(undefined);
   useEffect(() => {
-    if (emittedFiltersRef.current === columnFilters) return;
-    emittedFiltersRef.current = columnFilters;
     onFiltersChangeRef.current?.(columnFilters);
   }, [columnFilters]);
 
