@@ -398,4 +398,54 @@ describe('SnowServerDataTable with persistState', () => {
     expect(getUrlParam(storageKey('sortBy'))).toBe('name');
     expect(getUrlParam(storageKey('sortDesc'))).toBe('false');
   });
+
+  it('fires onFiltersChange on mount with the filters restored from the URL', async () => {
+    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
+    const onFiltersChange = vi.fn();
+
+    const params = new URLSearchParams();
+    params.set(storageKey('filters'), 'status:active');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-cb-mount']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        filters={[{ key: 'status', label: 'Status', options: [{ value: 'active', label: 'Active' }] }]}
+        persistState
+        onFiltersChange={onFiltersChange}
+      />
+    );
+
+    // The parent is notified of the persisted filter on mount (not only on change),
+    // so a sibling component (e.g. a map) restores from a shared link too.
+    await waitFor(() => {
+      expect(onFiltersChange).toHaveBeenCalledWith({ status: ['active'] });
+    });
+  });
+
+  it('does not let onFiltersChange override the internal filter state', async () => {
+    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
+
+    const params = new URLSearchParams();
+    params.set(storageKey('filters'), 'status:active');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-cb-state']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        filters={[{ key: 'status', label: 'Status', options: [{ value: 'active', label: 'Active' }] }]}
+        persistState
+        onFiltersChange={vi.fn()}
+      />
+    );
+
+    // Providing the observer must not clobber the internal state setter: the fetch
+    // still receives the persisted filters.
+    await screen.findByText('Server Item 1');
+    expect(fetchServerEndpoint).toHaveBeenCalledWith(expect.objectContaining({ filters: { status: ['active'] } }));
+  });
 });
