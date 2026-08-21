@@ -3,7 +3,7 @@
  */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 
 import { DataTable, DEFAULT_PAGE_SIZES } from './core';
 import { useSnowColumns } from './hooks/useSnowColumns';
@@ -48,19 +48,8 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
     defaultPageSize,
     defaultSortBy,
     defaultSortOrder,
+    onFiltersChange,
   });
-
-  // Expose the filters to the parent: fire on mount (incl. the value restored
-  // from the persisted URL) and on every change — but not on unrelated
-  // re-renders. A layout effect so the parent has the value *before paint* (no
-  // flash of an empty sibling on the first mount). The ref tracks the latest
-  // callback so its identity can change without re-firing; destructuring the
-  // prop keeps it out of `restProps` so it never overrides the internal setter.
-  const onFiltersChangeRef = useRef(onFiltersChange);
-  onFiltersChangeRef.current = onFiltersChange;
-  useLayoutEffect(() => {
-    onFiltersChangeRef.current?.(columnFilters);
-  }, [columnFilters]);
 
   // ============================================
   // Data Query

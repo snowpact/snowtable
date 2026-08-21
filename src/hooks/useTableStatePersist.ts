@@ -3,7 +3,7 @@
  */
 
 import { PaginationState, SortingState } from '@tanstack/react-table';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { decodeFiltersFromParam, encodeFiltersToParam } from '../utils';
 
@@ -52,6 +52,8 @@ interface UseTableStatePersistOptions {
   defaultPageSize: number;
   defaultSortBy?: string;
   defaultSortOrder?: 'asc' | 'desc';
+  /** Observe the active column filters — fired on mount (incl. the value restored from the URL) and on every change. */
+  onFiltersChange?: (filters: Record<string, string[]>) => void;
 }
 
 export const useTableStatePersist = ({
@@ -60,6 +62,7 @@ export const useTableStatePersist = ({
   defaultPageSize,
   defaultSortBy,
   defaultSortOrder = 'asc',
+  onFiltersChange,
 }: UseTableStatePersistOptions) => {
   const enabledRef = useRef(enabled);
   const defaultPageSizeRef = useRef(defaultPageSize);
@@ -146,6 +149,16 @@ export const useTableStatePersist = ({
       setStoredValue(STORAGE_KEY_FILTERS, encoded);
     }
   }, []);
+
+  // Notify the consumer of the active filters — on mount (incl. the value
+  // restored from the URL) and whenever they change. Observes the STATE, so it
+  // also catches paths that set it directly (e.g. resetToDefaults). Read-only; a
+  // ref tracks the latest callback so its identity can change without re-firing.
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  onFiltersChangeRef.current = onFiltersChange;
+  useEffect(() => {
+    onFiltersChangeRef.current?.(columnFilters);
+  }, [columnFilters]);
 
   // ============================================
   // Sorting
