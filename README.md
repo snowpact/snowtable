@@ -144,12 +144,6 @@ Two distinct actions, on purpose:
 
 ---
 
-## Migrating to v2
-
-Upgrading from v1? See the **[v2 migration guide](./MIGRATION.md)** — typed filters + the collapsible panel, the removed `onResetFilters` / topbar reset button, and `enableStickyActions` → `actionsMode`.
-
----
-
 ## Advanced Configuration
 
 ### Theme Customization
