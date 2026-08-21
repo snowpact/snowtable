@@ -3,6 +3,7 @@
  */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
 import { DataTable, DEFAULT_PAGE_SIZES } from './core';
 import { useSnowColumns } from './hooks/useSnowColumns';
@@ -44,8 +45,22 @@ export const SnowServerDataTable = <T extends Record<string, unknown>, K = unkno
     defaultPageSize,
     defaultSortBy,
     defaultSortOrder,
-    onFiltersChange,
   });
+
+  // Expose the filters to the parent: fire on mount (incl. the value restored
+  // from the persisted URL) and on every change. The `emitted` ref skips the
+  // duplicate call React makes in StrictMode dev (the effect runs twice with the
+  // same reference); the callback ref lets its identity change without re-firing;
+  // destructuring the prop keeps it out of `restProps` so it never overrides the
+  // internal state setter.
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  onFiltersChangeRef.current = onFiltersChange;
+  const emittedFiltersRef = useRef<Record<string, string[]> | undefined>(undefined);
+  useEffect(() => {
+    if (emittedFiltersRef.current === columnFilters) return;
+    emittedFiltersRef.current = columnFilters;
+    onFiltersChangeRef.current?.(columnFilters);
+  }, [columnFilters]);
 
   // ============================================
   // Server Query
