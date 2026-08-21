@@ -431,3 +431,21 @@ describe('SnowClientDataTable column configuration cookie', () => {
     await waitFor(() => expect(emailHeaders().length).toBeGreaterThan(0));
   });
 });
+
+describe('SnowClientDataTable onFiltersChange', () => {
+  it('fires onFiltersChange on mount with the initial filter state', async () => {
+    const fetchAllItemsEndpoint = vi.fn().mockResolvedValue(mockData);
+    const onFiltersChange = vi.fn();
+
+    renderWithProviders(
+      <SnowClientDataTable<TestItem, void>
+        queryKey={['client-cb-mount']}
+        columnConfig={columnConfig}
+        fetchAllItemsEndpoint={fetchAllItemsEndpoint}
+        onFiltersChange={onFiltersChange}
+      />
+    );
+
+    await waitFor(() => expect(onFiltersChange).toHaveBeenCalledWith({}));
+  });
+});

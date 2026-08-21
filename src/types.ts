@@ -164,6 +164,14 @@ export interface DataTableUIOptions<T extends object> {
    * )}
    */
   renderTopbar?: (elements: TopbarElements) => ReactNode;
+  /**
+   * Observe the active column filters (the shared `Record<key, string[]>`
+   * channel). Fires **once on mount** with the initial value — including the
+   * value restored from the persisted URL state (`persistState`) — and again on
+   * every change. Read-only: the table still owns the filter state; use it to
+   * mirror the value into a sibling component (e.g. a map).
+   */
+  onFiltersChange?: (filters: Record<string, string[]>) => void;
 }
 
 // ============================================

@@ -135,6 +135,8 @@ const filters: FilterConfig<User>[] = [
 
 In **server mode**, filters arrive in `fetchServerEndpoint`'s `params.filters` as `Record<string, string[]>` (e.g. `{ status: ['active'], email: ['ali'], createdAt: ['2024-01-01', '2024-12-31'] }`) — interpret each key according to its type.
 
+To **observe** the active filters from the parent (e.g. to drive a sibling component like a map), pass **`onFiltersChange`**. It fires on mount with the initial value — including the value restored from the persisted URL (`persistState`) — and again on every change. It's read-only: the table still owns the filter state.
+
 ### Reset wording
 
 Two distinct actions, on purpose:
