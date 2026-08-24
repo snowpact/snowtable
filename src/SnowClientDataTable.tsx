@@ -79,6 +79,21 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
     return items.filter(item => prefilterFn(item, activePrefilter));
   }, [items, activePrefilter, prefilterFn]);
 
+  // Apply custom (`clientFilterFn`) filters here — they can match across several
+  // columns, so they run as a client-side pre-filter rather than as a per-column
+  // TanStack filter. Their value still lives in `columnFilters` (URL persistence,
+  // the "Filters (n)" count, onFiltersChange); TanStack ignores the virtual key.
+  const filteredData = useMemo(() => {
+    const customFilters = (filters ?? []).filter(f => f.clientFilterFn);
+    if (customFilters.length === 0) return prefilteredData;
+    return prefilteredData.filter(item =>
+      customFilters.every(f => {
+        const values = columnFilters[String(f.key)];
+        return !values?.length || f.clientFilterFn!(item, values);
+      })
+    );
+  }, [prefilteredData, filters, columnFilters]);
+
   // ============================================
   // Columns & Actions (via shared hook)
   // ============================================
@@ -97,7 +112,7 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
       mode="client"
       // `queryKey` is required and unique per table, so two tables never share a config cookie.
       columnConfigCookieSuffix={deriveColumnConfigurationId(queryKey)}
-      data={prefilteredData}
+      data={filteredData}
       columns={columns}
       isLoading={isLoading}
       isFetching={isFetching && !isLoading}

@@ -137,6 +137,16 @@ In **server mode**, filters arrive in `fetchServerEndpoint`'s `params.filters` a
 
 To **observe** the active filters from the parent (e.g. to drive a sibling component like a map), pass **`onFiltersChange`**. It fires on mount with the initial value — including the value restored from the persisted URL (`persistState`) — and again on every change. It's read-only: the table still owns the filter state.
 
+To filter across **several columns** (client mode), give a filter a **virtual key** (convention: `_`-prefixed) and a **`clientFilterFn`** matcher:
+
+```tsx
+{ type: 'select', key: '_affectation', label: 'Affectation', multipleSelection: true,
+  options: [...agents, ...nodes],
+  clientFilterFn: (item, values) => values.some(v => v === item.agentId || v === item.nodeId) }
+```
+
+The picked value flows through `columnFilters` like any filter (URL persistence, the "Filters (n)" count, `onFiltersChange`). **Client only** — in server mode `clientFilterFn` is ignored and the value arrives in `params.filters['_affectation']` for you to interpret.
+
 ### Reset wording
 
 Two distinct actions, on purpose:

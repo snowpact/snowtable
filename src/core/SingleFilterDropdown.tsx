@@ -10,14 +10,14 @@ import { DropdownMenu } from '../primitives/DropdownMenu';
 import { Input } from '../primitives/Input';
 import { getT } from '../registry';
 import { cn } from '../utils';
-import type { CategoricalFilterConfig } from './filterConfig';
+import type { CategoricalFilterConfig, FilterKey } from './filterConfig';
 
 export type { FilterConfig, FilterOption } from './filterConfig';
 
 export interface SingleFilterDropdownProps<T extends object> {
   filter: CategoricalFilterConfig<T>;
   selectedValues?: string[];
-  onFilterChange: (key: keyof T, selectedValues: string[]) => void;
+  onFilterChange: (key: FilterKey<T>, selectedValues: string[]) => void;
 }
 
 export function SingleFilterDropdown<T extends object>({
