@@ -133,19 +133,26 @@ export const useTableStatePersist = ({
     return { pageIndex: 0, pageSize: defaultPageSize };
   });
 
+  // `prev` comes from a ref rather than a state updater: persisting is a side
+  // effect, and updaters must stay pure — React runs them during render (twice
+  // under StrictMode). A router-backed `storage` writes by calling setState on
+  // the router, which would then warn and navigate twice.
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
   const setPagination = useCallback((value: PaginationState | ((prev: PaginationState) => PaginationState)) => {
-    setPaginationState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      // Only update URL if values actually changed
-      if (enabledRef.current && (prev.pageIndex !== newValue.pageIndex || prev.pageSize !== newValue.pageSize)) {
-        setStoredValue(STORAGE_KEY_PAGE, newValue.pageIndex > 0 ? String(newValue.pageIndex + 1) : null);
-        setStoredValue(
-          STORAGE_KEY_PAGE_SIZE,
-          newValue.pageSize !== defaultPageSizeRef.current ? String(newValue.pageSize) : null
-        );
-      }
-      return newValue;
-    });
+    const prev = paginationRef.current;
+    const newValue = typeof value === 'function' ? value(prev) : value;
+    setPaginationState(newValue);
+
+    // Only update storage if values actually changed
+    if (enabledRef.current && (prev.pageIndex !== newValue.pageIndex || prev.pageSize !== newValue.pageSize)) {
+      setStoredValue(STORAGE_KEY_PAGE, newValue.pageIndex > 0 ? String(newValue.pageIndex + 1) : null);
+      setStoredValue(
+        STORAGE_KEY_PAGE_SIZE,
+        newValue.pageSize !== defaultPageSizeRef.current ? String(newValue.pageSize) : null
+      );
+    }
   }, []);
 
   // ============================================
@@ -184,20 +191,23 @@ export const useTableStatePersist = ({
     return defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === 'desc' }] : [];
   });
 
+  // Same reason as `setPagination`: keep the write out of the state updater.
+  const sortingRef = useRef(sorting);
+  sortingRef.current = sorting;
+
   const setSorting = useCallback((value: SortingState | ((prev: SortingState) => SortingState)) => {
-    setSortingState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      if (enabledRef.current) {
-        if (newValue.length > 0) {
-          setStoredValue(STORAGE_KEY_SORT_BY, newValue[0].id);
-          setStoredValue(STORAGE_KEY_SORT_DESC, String(newValue[0].desc));
-        } else {
-          setStoredValue(STORAGE_KEY_SORT_BY, null);
-          setStoredValue(STORAGE_KEY_SORT_DESC, null);
-        }
+    const newValue = typeof value === 'function' ? value(sortingRef.current) : value;
+    setSortingState(newValue);
+
+    if (enabledRef.current) {
+      if (newValue.length > 0) {
+        setStoredValue(STORAGE_KEY_SORT_BY, newValue[0].id);
+        setStoredValue(STORAGE_KEY_SORT_DESC, String(newValue[0].desc));
+      } else {
+        setStoredValue(STORAGE_KEY_SORT_BY, null);
+        setStoredValue(STORAGE_KEY_SORT_DESC, null);
       }
-      return newValue;
-    });
+    }
   }, []);
 
   // ============================================
