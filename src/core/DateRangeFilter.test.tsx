@@ -94,6 +94,21 @@ describe('DateRangeFilter', () => {
     expect(onFilterChange).toHaveBeenCalledWith('createdAt', []);
   });
 
+  it('exposes the documented scoping hook on the portaled panel', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={vi.fn()} />);
+
+    await user.click(screen.getByTestId('snow-filter-trigger'));
+    const calendar = await screen.findByTestId('snow-calendar');
+
+    // The panel is portaled out of the table, so `.snow-calendar-popover` is the
+    // only handle consumers have to style it (grid + footer) — see README.
+    const panel = calendar.closest('.snow-calendar-popover');
+    expect(panel).not.toBeNull();
+    expect(panel).toHaveClass('snow-popover-content');
+    expect(panel!.querySelector('.snow-calendar-footer')).not.toBeNull();
+  });
+
   it('disables days outside the min/max bounds', async () => {
     const user = userEvent.setup();
     const bounded: DateRangeFilterConfig<Item> = {

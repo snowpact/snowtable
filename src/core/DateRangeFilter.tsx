@@ -76,7 +76,10 @@ export function DateRangeFilter<T extends object>({ filter, selectedValues, onFi
           <FilterTriggerEnd isActive={isActive} onClear={clear} />
         </Button>
       </Popover.Trigger>
-      <Popover.Content align="start">
+      {/* `snow-calendar-popover` is the single scoping hook for the whole panel:
+          the popover is portaled to <body>, so a wrapper className on the table
+          can't reach it, and the footer is a sibling of the calendar grid. */}
+      <Popover.Content align="start" className="snow-calendar-popover">
         <Calendar value={draft} onChange={setDraft} minDate={filter.minDate} maxDate={filter.maxDate} />
         <div className="snow-calendar-footer">
           <Button onClick={clear}>{t('dataTable.reset')}</Button>
