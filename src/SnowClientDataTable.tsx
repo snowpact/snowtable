@@ -24,6 +24,7 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
   defaultSortOrder = 'asc',
   defaultPageSize = DEFAULT_PAGE_SIZES[0],
   persistState = false,
+  persistStorage,
   fetchAllItemsEndpoint,
   onFiltersChange,
   ...restProps
@@ -48,6 +49,7 @@ export const SnowClientDataTable = <T extends Record<string, unknown>, K = unkno
     defaultPageSize,
     defaultSortBy,
     defaultSortOrder,
+    storage: persistStorage,
   });
 
   // Expose the filters to the parent: fire on mount (incl. the value restored

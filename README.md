@@ -404,7 +404,46 @@ actions={[
 <SnowClientDataTable persistState />
 ```
 
-Saves pagination, search, filters, and sorting in URL params.
+Saves prefilter, pagination, search, filters, and sorting in URL query params — restored on reload, back-navigation and shared links:
+
+| Param | Holds | Example |
+| --- | --- | --- |
+| `dt_prefilter` | active prefilter id | `dt_prefilter=active` |
+| `dt_page` | page number (1-based; absent on page 1) | `dt_page=3` |
+| `dt_pageSize` | page size (absent when it's the default) | `dt_pageSize=50` |
+| `dt_search` | global search query | `dt_search=alice` |
+| `dt_filters` | column filters, `key:v1,v2` joined by `\|` | `dt_filters=status:active,pending\|createdAt:2024-01-01,2024-12-31` |
+| `dt_sortBy` / `dt_sortDesc` | sorted column + direction | `dt_sortBy=name&dt_sortDesc=false` |
+
+Keys and values in `dt_filters` are percent-encoded, so a text query may safely contain `,` `:` or `|`.
+
+#### Using it with a router (`persistStorage`)
+
+By default the table writes those keys with `history.replaceState`. **A client-side router doesn't observe that**: its next navigation serializes a location that predates the table's writes and drops the `dt_*` params. In a routed app, hand the table a router-backed storage so *your router* owns the URL:
+
+```tsx
+import { useSearchParams } from 'react-router-dom';
+
+const [searchParams, setSearchParams] = useSearchParams();
+
+<SnowClientDataTable
+  persistState
+  persistStorage={{
+    getItem: key => searchParams.get(key),
+    setItem: (key, value) =>
+      setSearchParams(
+        prev => {
+          if (value === null) prev.delete(key);
+          else prev.set(key, value);
+          return prev;
+        },
+        { replace: true }
+      ),
+  }}
+/>;
+```
+
+The object doesn't need to be memoized. Any `TableStateStorage` (`getItem` / `setItem`) works — pass a `sessionStorage`-backed one to persist state without touching the URL at all.
 
 ### Column Configuration
 

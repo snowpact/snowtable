@@ -1,5 +1,5 @@
 /**
- * Hook for persisting table state in URL query params
+ * Hook for persisting table state (in the URL query by default).
  */
 
 import { PaginationState, SortingState } from '@tanstack/react-table';
@@ -16,34 +16,48 @@ export const STORAGE_KEY_FILTERS = 'dt_filters';
 export const STORAGE_KEY_SORT_BY = 'dt_sortBy';
 export const STORAGE_KEY_SORT_DESC = 'dt_sortDesc';
 
-// Read from URL query (no navigation, just reading location.search)
-const getStoredValue = (key: string): string | null => {
-  if (typeof window === 'undefined') return null;
+/**
+ * Where the table reads/writes its persisted state (`dt_*` keys).
+ *
+ * Provide your own to let **your router** own the URL. The built-in default
+ * writes with `history.replaceState`, which a client-side router doesn't observe:
+ * its next navigation then serializes a location that predates the table's
+ * writes and drops the `dt_*` params. Routed apps should pass a router-backed
+ * storage (see `SnowClientDataTableProps.persistStorage`).
+ */
+export interface TableStateStorage {
+  /** Return the persisted value for `key`, or `null`. */
+  getItem: (key: string) => string | null;
+  /** Persist `value` for `key` — or remove it when `value` is `null`. */
+  setItem: (key: string, value: string | null) => void;
+}
 
-  try {
+/** Default storage: the URL query string, written with `history.replaceState`. */
+export const urlStateStorage: TableStateStorage = {
+  getItem: key => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return new URL(window.location.href).searchParams.get(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    if (typeof window === 'undefined') return;
+
+    // Skip if value hasn't changed
+    const currentValue = new URL(window.location.href).searchParams.get(key);
+    if (currentValue === value) return;
+
     const url = new URL(window.location.href);
-    return url.searchParams.get(key);
-  } catch {
-    return null;
-  }
-};
+    if (value) {
+      url.searchParams.set(key, value);
+    } else {
+      url.searchParams.delete(key);
+    }
 
-// Write to URL query using history.replaceState
-const setStoredValue = (key: string, value: string | null) => {
-  if (typeof window === 'undefined') return;
-
-  // Skip if value hasn't changed
-  const currentValue = new URL(window.location.href).searchParams.get(key);
-  if (currentValue === value) return;
-
-  const url = new URL(window.location.href);
-  if (value) {
-    url.searchParams.set(key, value);
-  } else {
-    url.searchParams.delete(key);
-  }
-
-  window.history.replaceState(window.history.state, '', url.toString());
+    window.history.replaceState(window.history.state, '', url.toString());
+  },
 };
 
 interface UseTableStatePersistOptions {
@@ -52,6 +66,7 @@ interface UseTableStatePersistOptions {
   defaultPageSize: number;
   defaultSortBy?: string;
   defaultSortOrder?: 'asc' | 'desc';
+  storage?: TableStateStorage;
 }
 
 export const useTableStatePersist = ({
@@ -60,9 +75,17 @@ export const useTableStatePersist = ({
   defaultPageSize,
   defaultSortBy,
   defaultSortOrder = 'asc',
+  storage,
 }: UseTableStatePersistOptions) => {
   const enabledRef = useRef(enabled);
   const defaultPageSizeRef = useRef(defaultPageSize);
+  // Assigned during render (before the state initializers below read from it) so
+  // an inline `persistStorage={{…}}` object doesn't have to be memoized.
+  const storageRef = useRef<TableStateStorage>(storage ?? urlStateStorage);
+  storageRef.current = storage ?? urlStateStorage;
+
+  const getStoredValue = (key: string) => storageRef.current.getItem(key);
+  const setStoredValue = (key: string, value: string | null) => storageRef.current.setItem(key, value);
 
   // ============================================
   // Prefilter
