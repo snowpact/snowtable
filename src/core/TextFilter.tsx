@@ -12,14 +12,14 @@ import { Input } from '../primitives/Input';
 import { Popover } from '../primitives/Popover';
 import { cn } from '../utils';
 
-import type { TextFilterConfig } from './filterConfig';
+import type { FilterKey, TextFilterConfig } from './filterConfig';
 
 const DEBOUNCE_MS = 400;
 
 export interface TextFilterProps<T extends object> {
   filter: TextFilterConfig<T>;
   selectedValues?: string[];
-  onFilterChange: (key: keyof T, selectedValues: string[]) => void;
+  onFilterChange: (key: FilterKey<T>, selectedValues: string[]) => void;
 }
 
 export function TextFilter<T extends object>({ filter, selectedValues, onFilterChange }: TextFilterProps<T>) {

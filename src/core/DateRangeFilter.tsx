@@ -17,12 +17,12 @@ import { getT } from '../registry';
 import { cn, parseISODate } from '../utils';
 
 import { Calendar } from './Calendar';
-import { decodeDateRange, encodeDateRange, type DateRangeFilterConfig, type DateRangeValue } from './filterConfig';
+import { decodeDateRange, encodeDateRange, type DateRangeFilterConfig, type DateRangeValue, type FilterKey } from './filterConfig';
 
 export interface DateRangeFilterProps<T extends object> {
   filter: DateRangeFilterConfig<T>;
   selectedValues?: string[];
-  onFilterChange: (key: keyof T, selectedValues: string[]) => void;
+  onFilterChange: (key: FilterKey<T>, selectedValues: string[]) => void;
 }
 
 const formatTriggerLabel = (value: DateRangeValue, fallback: string, locale?: string): string => {

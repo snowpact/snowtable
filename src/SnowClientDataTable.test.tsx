@@ -449,3 +449,40 @@ describe('SnowClientDataTable onFiltersChange', () => {
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalledWith({}));
   });
 });
+
+describe('SnowClientDataTable custom filter (clientFilterFn)', () => {
+  it('filters across multiple fields via a virtual-key custom filter', async () => {
+    const data: TestItem[] = [
+      { id: '1', name: 'Alice', email: 'a@x.com' },
+      { id: '2', name: 'Bob', email: 'match@x.com' }, // email contains 'match'
+      { id: '3', name: 'Carol', email: 'c@x.com' },
+    ];
+    // Seed the virtual filter's value from the URL: `_who = ['match']`.
+    setupLocationMock('dt_filters=_who:match');
+
+    renderWithProviders(
+      <SnowClientDataTable<TestItem, void>
+        queryKey={['client-custom-filter']}
+        columnConfig={columnConfig}
+        fetchAllItemsEndpoint={vi.fn().mockResolvedValue(data)}
+        persistState
+        filters={[
+          {
+            type: 'select',
+            key: '_who', // virtual id, no matching column
+            label: 'Who',
+            multipleSelection: true,
+            options: [{ value: 'match', label: 'Match' }],
+            clientFilterFn: (item, vals) =>
+              vals.some(v => item.name.toLowerCase().includes(v) || item.email.includes(v)),
+          },
+        ]}
+      />
+    );
+
+    // Only Bob matches (email contains 'match'); Alice/Carol are filtered out.
+    expect(await screen.findByText('Bob')).toBeInTheDocument();
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    expect(screen.queryByText('Carol')).not.toBeInTheDocument();
+  });
+});

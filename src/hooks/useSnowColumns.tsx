@@ -100,20 +100,24 @@ export const useSnowColumns = <T extends Record<string, unknown>, K>({
       .filter(column => !column.hidden)
       .map(column => {
         const filterCfg = filters?.find(f => f.key === column.key);
+        // A filter with a custom `clientFilterFn` is applied client-side by
+        // SnowClientDataTable (it can read several columns), so don't also wire it
+        // as a per-column TanStack filter — that would double-filter.
+        const columnFilterCfg = filterCfg && !filterCfg.clientFilterFn ? filterCfg : undefined;
 
         return {
           accessorKey: column.key as string,
           accessorFn: column.searchableValue ? (row: T) => column.searchableValue!(row) : undefined,
           header: column.label ?? t(`data.${column.key as string}`),
           enableSorting: column.sortable ?? true,
-          enableColumnFilter: !!filterCfg,
+          enableColumnFilter: !!columnFilterCfg,
           // Client mode: enable global filter by default (use searchableValue if defined, otherwise use accessor)
           // Server mode: always false (server handles search)
           enableGlobalFilter: mode === 'client',
-          filterFn: filterCfg
-            ? filterCfg.type === 'dateRange'
+          filterFn: columnFilterCfg
+            ? columnFilterCfg.type === 'dateRange'
               ? 'dateRange'
-              : filterCfg.type === 'text'
+              : columnFilterCfg.type === 'text'
                 ? 'text'
                 : 'multiSelect'
             : undefined,

@@ -6,7 +6,7 @@
  */
 
 import { DateRangeFilter } from './DateRangeFilter';
-import { isDateRangeFilter, isTextFilter, type FilterConfig } from './filterConfig';
+import { isDateRangeFilter, isTextFilter, type FilterConfig, type FilterKey } from './filterConfig';
 import { SingleFilterDropdown } from './SingleFilterDropdown';
 import { TextFilter } from './TextFilter';
 
@@ -23,7 +23,7 @@ export function FilterControl<T extends object>({
 }: FilterControlProps<T>) {
   const selectedValues = columnFilters[String(filter.key)];
 
-  const handleFilterChange = (key: keyof T, values: string[]) => {
+  const handleFilterChange = (key: FilterKey<T>, values: string[]) => {
     const columnId = String(key);
     const next = { ...columnFilters };
     if (values.length === 0) {

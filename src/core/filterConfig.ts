@@ -13,40 +13,48 @@ export type FilterOption = {
 };
 
 /**
- * Categorical (multi-select) filter — the historical filter shape.
- *
- * `type` is optional and defaults to `'select'`, so every pre-existing
- * `{ key, label, options }` config keeps type-checking with zero changes.
+ * A filter's key: any string key of `T` (autocompleted), or a **virtual** id
+ * (convention: `_`-prefixed) when the filter uses {@link CategoricalFilterConfig.clientFilterFn}
+ * to match across several columns.
  */
-export type CategoricalFilterConfig<T extends object> = {
-  type?: 'select';
-  key: keyof T;
+export type FilterKey<T extends object> = (keyof T & string) | (string & {});
+
+/** Fields shared by every filter type. */
+type BaseFilterConfig<T extends object> = {
+  key: FilterKey<T>;
   label: string;
+  /**
+   * Client-only custom matcher: return `true` if `item` matches the selected
+   * values, reading any fields you like. Use it with a virtual `key` to filter
+   * across several columns. **Ignored in server mode** — there, the value still
+   * arrives in `fetchServerEndpoint`'s `params.filters` for you to interpret.
+   */
+  clientFilterFn?: (item: T, selectedValues: string[]) => boolean;
+};
+
+/**
+ * Categorical (multi-select) filter — the historical shape. `type` is optional
+ * and defaults to `'select'`, so every pre-existing `{ key, label, options }`
+ * config keeps type-checking with zero changes.
+ */
+export type CategoricalFilterConfig<T extends object> = BaseFilterConfig<T> & {
+  type?: 'select';
   options: FilterOption[];
   multipleSelection?: boolean;
 };
 
-/**
- * Date-range filter over a column whose values are ISO `'YYYY-MM-DD'` strings
- * (or ISO datetimes starting with that date part).
- */
-export type DateRangeFilterConfig<T extends object> = {
+/** Date-range filter over a column whose values are ISO `'YYYY-MM-DD'` strings (or ISO datetimes). */
+export type DateRangeFilterConfig<T extends object> = BaseFilterConfig<T> & {
   type: 'dateRange';
-  key: keyof T;
-  label: string;
   /** Earliest selectable date in the calendar, ISO `'YYYY-MM-DD'`. */
   minDate?: string;
   /** Latest selectable date in the calendar, ISO `'YYYY-MM-DD'`. */
   maxDate?: string;
 };
 
-/**
- * Free-text "contains" filter (case-insensitive, SQL `LIKE`-style) over a column.
- */
-export type TextFilterConfig<T extends object> = {
+/** Free-text "contains" filter (case-insensitive, SQL `LIKE`-style) over a column. */
+export type TextFilterConfig<T extends object> = BaseFilterConfig<T> & {
   type: 'text';
-  key: keyof T;
-  label: string;
   /** Placeholder shown in the text input; defaults to the label. */
   placeholder?: string;
 };
