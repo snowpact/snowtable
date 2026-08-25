@@ -399,6 +399,72 @@ describe('SnowServerDataTable with persistState', () => {
     expect(getUrlParam(storageKey('sortDesc'))).toBe('false');
   });
 
+  it('reads and writes through a custom persistStorage, never touching history', async () => {
+    const user = userEvent.setup();
+    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
+    const prefilters = [
+      { id: 'all', label: 'All' },
+      { id: 'active', label: 'Active' },
+    ];
+
+    // Stands in for a router-owned store (react-router's searchParams, etc.).
+    const store = new Map<string, string>([[storageKey('prefilter'), 'active']]);
+    const persistStorage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string | null) => {
+        if (value === null) store.delete(key);
+        else store.set(key, value);
+      },
+    };
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-custom-storage']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        prefilters={prefilters}
+        persistState
+        persistStorage={persistStorage}
+      />
+    );
+
+    await screen.findByText('Server Item 1');
+
+    // Initial state comes from the custom storage, not the URL.
+    expect(screen.getByText('Active').closest('button')).toHaveAttribute('data-state', 'active');
+
+    await user.click(screen.getByText('All'));
+
+    // Changes are written back to it…
+    await waitFor(() => expect(store.get(storageKey('prefilter'))).toBe('all'));
+    // …and the lib never writes the URL behind the router's back.
+    expect(mockReplaceState).not.toHaveBeenCalled();
+  });
+
+  it('still persists to the URL when no persistStorage is given', async () => {
+    const user = userEvent.setup();
+    const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-default-storage']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        prefilters={[
+          { id: 'all', label: 'All' },
+          { id: 'active', label: 'Active' },
+        ]}
+        persistState
+      />
+    );
+
+    await screen.findByText('Server Item 1');
+    await user.click(screen.getByText('Active'));
+
+    expect(getUrlParam(storageKey('prefilter'))).toBe('active');
+    expect(mockReplaceState).toHaveBeenCalled();
+  });
+
   it('fires onFiltersChange on mount with the filters restored from the URL', async () => {
     const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);
     const onFiltersChange = vi.fn();

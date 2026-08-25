@@ -1,7 +1,8 @@
-import { act } from 'react';
+import { renderHook } from '@testing-library/react';
+import { act, StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useTableStatePersist } from './useTableStatePersist';
+import { useTableStatePersist, type TableStateStorage } from './useTableStatePersist';
 
 import { renderHookWithProviders } from '../test/test-utils';
 
@@ -235,5 +236,53 @@ describe('useTableStatePersist', () => {
     expect(result.current.columnFilters).toEqual({});
     expect(result.current.sorting).toEqual([{ id: 'createdAt', desc: false }]);
     expect(result.current.hasActiveFilters).toBe(false);
+  });
+
+  describe('custom storage', () => {
+    const makeStore = (seed: [string, string][] = []) => {
+      const store = new Map(seed);
+      const storage: TableStateStorage = {
+        getItem: key => store.get(key) ?? null,
+        setItem: (key, value) => {
+          if (value === null) store.delete(key);
+          else store.set(key, value);
+        },
+      };
+      return { store, storage };
+    };
+
+    it('reads and writes through the given storage, leaving the URL alone', () => {
+      const { store, storage } = makeStore([['dt_search', 'seeded']]);
+
+      const { result } = renderHookWithProviders(() =>
+        useTableStatePersist({ enabled: true, defaultPageSize: 10, storage })
+      );
+
+      expect(result.current.globalFilter).toBe('seeded');
+
+      act(() => result.current.setColumnFilters({ status: ['active'] }));
+
+      expect(store.get('dt_filters')).toBe('status:active');
+      // The whole point: no write behind the router's back.
+      expect(mockReplaceState).not.toHaveBeenCalled();
+    });
+
+    it('persists once per change under StrictMode (state updaters stay pure)', () => {
+      // React double-invokes state updaters in StrictMode. Persisting from inside
+      // one would write twice — and, with a router-backed storage, navigate twice.
+      const setItem = vi.fn();
+      const storage: TableStateStorage = { getItem: () => null, setItem };
+
+      const { result } = renderHook(() => useTableStatePersist({ enabled: true, defaultPageSize: 10, storage }), {
+        wrapper: StrictMode,
+      });
+
+      act(() => result.current.setPagination({ pageIndex: 2, pageSize: 10 }));
+      expect(setItem.mock.calls.filter(([key]) => key === 'dt_page')).toHaveLength(1);
+
+      setItem.mockClear();
+      act(() => result.current.setSorting([{ id: 'name', desc: true }]));
+      expect(setItem.mock.calls.filter(([key]) => key === 'dt_sortBy')).toHaveLength(1);
+    });
   });
 });

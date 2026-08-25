@@ -1,5 +1,5 @@
 /**
- * Hook for persisting table state in URL query params
+ * Hook for persisting table state (in the URL query by default).
  */
 
 import { PaginationState, SortingState } from '@tanstack/react-table';
@@ -16,34 +16,48 @@ export const STORAGE_KEY_FILTERS = 'dt_filters';
 export const STORAGE_KEY_SORT_BY = 'dt_sortBy';
 export const STORAGE_KEY_SORT_DESC = 'dt_sortDesc';
 
-// Read from URL query (no navigation, just reading location.search)
-const getStoredValue = (key: string): string | null => {
-  if (typeof window === 'undefined') return null;
+/**
+ * Where the table reads/writes its persisted state (`dt_*` keys).
+ *
+ * Provide your own to let **your router** own the URL. The built-in default
+ * writes with `history.replaceState`, which a client-side router doesn't observe:
+ * its next navigation then serializes a location that predates the table's
+ * writes and drops the `dt_*` params. Routed apps should pass a router-backed
+ * storage (see `SnowClientDataTableProps.persistStorage`).
+ */
+export interface TableStateStorage {
+  /** Return the persisted value for `key`, or `null`. */
+  getItem: (key: string) => string | null;
+  /** Persist `value` for `key` — or remove it when `value` is `null`. */
+  setItem: (key: string, value: string | null) => void;
+}
 
-  try {
+/** Default storage: the URL query string, written with `history.replaceState`. */
+export const urlStateStorage: TableStateStorage = {
+  getItem: key => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return new URL(window.location.href).searchParams.get(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    if (typeof window === 'undefined') return;
+
+    // Skip if value hasn't changed
+    const currentValue = new URL(window.location.href).searchParams.get(key);
+    if (currentValue === value) return;
+
     const url = new URL(window.location.href);
-    return url.searchParams.get(key);
-  } catch {
-    return null;
-  }
-};
+    if (value) {
+      url.searchParams.set(key, value);
+    } else {
+      url.searchParams.delete(key);
+    }
 
-// Write to URL query using history.replaceState
-const setStoredValue = (key: string, value: string | null) => {
-  if (typeof window === 'undefined') return;
-
-  // Skip if value hasn't changed
-  const currentValue = new URL(window.location.href).searchParams.get(key);
-  if (currentValue === value) return;
-
-  const url = new URL(window.location.href);
-  if (value) {
-    url.searchParams.set(key, value);
-  } else {
-    url.searchParams.delete(key);
-  }
-
-  window.history.replaceState(window.history.state, '', url.toString());
+    window.history.replaceState(window.history.state, '', url.toString());
+  },
 };
 
 interface UseTableStatePersistOptions {
@@ -52,6 +66,7 @@ interface UseTableStatePersistOptions {
   defaultPageSize: number;
   defaultSortBy?: string;
   defaultSortOrder?: 'asc' | 'desc';
+  storage?: TableStateStorage;
 }
 
 export const useTableStatePersist = ({
@@ -60,9 +75,17 @@ export const useTableStatePersist = ({
   defaultPageSize,
   defaultSortBy,
   defaultSortOrder = 'asc',
+  storage,
 }: UseTableStatePersistOptions) => {
   const enabledRef = useRef(enabled);
   const defaultPageSizeRef = useRef(defaultPageSize);
+  // Assigned during render (before the state initializers below read from it) so
+  // an inline `persistStorage={{…}}` object doesn't have to be memoized.
+  const storageRef = useRef<TableStateStorage>(storage ?? urlStateStorage);
+  storageRef.current = storage ?? urlStateStorage;
+
+  const getStoredValue = (key: string) => storageRef.current.getItem(key);
+  const setStoredValue = (key: string, value: string | null) => storageRef.current.setItem(key, value);
 
   // ============================================
   // Prefilter
@@ -110,19 +133,26 @@ export const useTableStatePersist = ({
     return { pageIndex: 0, pageSize: defaultPageSize };
   });
 
+  // `prev` comes from a ref rather than a state updater: persisting is a side
+  // effect, and updaters must stay pure — React runs them during render (twice
+  // under StrictMode). A router-backed `storage` writes by calling setState on
+  // the router, which would then warn and navigate twice.
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
   const setPagination = useCallback((value: PaginationState | ((prev: PaginationState) => PaginationState)) => {
-    setPaginationState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      // Only update URL if values actually changed
-      if (enabledRef.current && (prev.pageIndex !== newValue.pageIndex || prev.pageSize !== newValue.pageSize)) {
-        setStoredValue(STORAGE_KEY_PAGE, newValue.pageIndex > 0 ? String(newValue.pageIndex + 1) : null);
-        setStoredValue(
-          STORAGE_KEY_PAGE_SIZE,
-          newValue.pageSize !== defaultPageSizeRef.current ? String(newValue.pageSize) : null
-        );
-      }
-      return newValue;
-    });
+    const prev = paginationRef.current;
+    const newValue = typeof value === 'function' ? value(prev) : value;
+    setPaginationState(newValue);
+
+    // Only update storage if values actually changed
+    if (enabledRef.current && (prev.pageIndex !== newValue.pageIndex || prev.pageSize !== newValue.pageSize)) {
+      setStoredValue(STORAGE_KEY_PAGE, newValue.pageIndex > 0 ? String(newValue.pageIndex + 1) : null);
+      setStoredValue(
+        STORAGE_KEY_PAGE_SIZE,
+        newValue.pageSize !== defaultPageSizeRef.current ? String(newValue.pageSize) : null
+      );
+    }
   }, []);
 
   // ============================================
@@ -161,20 +191,23 @@ export const useTableStatePersist = ({
     return defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === 'desc' }] : [];
   });
 
+  // Same reason as `setPagination`: keep the write out of the state updater.
+  const sortingRef = useRef(sorting);
+  sortingRef.current = sorting;
+
   const setSorting = useCallback((value: SortingState | ((prev: SortingState) => SortingState)) => {
-    setSortingState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      if (enabledRef.current) {
-        if (newValue.length > 0) {
-          setStoredValue(STORAGE_KEY_SORT_BY, newValue[0].id);
-          setStoredValue(STORAGE_KEY_SORT_DESC, String(newValue[0].desc));
-        } else {
-          setStoredValue(STORAGE_KEY_SORT_BY, null);
-          setStoredValue(STORAGE_KEY_SORT_DESC, null);
-        }
+    const newValue = typeof value === 'function' ? value(sortingRef.current) : value;
+    setSortingState(newValue);
+
+    if (enabledRef.current) {
+      if (newValue.length > 0) {
+        setStoredValue(STORAGE_KEY_SORT_BY, newValue[0].id);
+        setStoredValue(STORAGE_KEY_SORT_DESC, String(newValue[0].desc));
+      } else {
+        setStoredValue(STORAGE_KEY_SORT_BY, null);
+        setStoredValue(STORAGE_KEY_SORT_DESC, null);
       }
-      return newValue;
-    });
+    }
   }, []);
 
   // ============================================

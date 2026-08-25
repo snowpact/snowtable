@@ -13,6 +13,7 @@ export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 import type { TopbarElements } from './core/DataTable';
 import type { PreFilter } from './core/PrefilterTabs';
 import type { FilterConfig } from './core/SingleFilterDropdown';
+import type { TableStateStorage } from './hooks/useTableStatePersist';
 import type { SearchMode } from './utils/fuzzyFilter';
 
 // ============================================
@@ -191,9 +192,33 @@ export interface BaseSnowTableProps<T extends Record<string, unknown>, K = unkno
   defaultSortOrder?: 'asc' | 'desc';
   defaultPageSize?: number;
   /**
-   * Persist table state (prefilter, pagination, search, filters, sorting) in URL query params.
+   * Persist table state (prefilter, pagination, search, filters, sorting) in URL query params
+   * (`dt_prefilter`, `dt_page`, `dt_pageSize`, `dt_search`, `dt_filters`, `dt_sortBy`, `dt_sortDesc`).
    */
   persistState?: boolean;
+  /**
+   * Where `persistState` reads and writes those keys. Defaults to the URL query,
+   * written with `history.replaceState`.
+   *
+   * **Pass a router-backed storage in a routed app.** `history.replaceState` happens
+   * behind a client-side router's back: its next navigation serializes a location
+   * that predates the table's writes, dropping the `dt_*` params.
+   *
+   * @example // react-router
+   * const [searchParams, setSearchParams] = useSearchParams();
+   * <SnowClientDataTable
+   *   persistState
+   *   persistStorage={{
+   *     getItem: key => searchParams.get(key),
+   *     setItem: (key, value) =>
+   *       setSearchParams(prev => {
+   *         if (value === null) prev.delete(key); else prev.set(key, value);
+   *         return prev;
+   *       }, { replace: true }),
+   *   }}
+   * />
+   */
+  persistStorage?: TableStateStorage;
   /**
    * Render a sub-header row directly under the column headers. Receives the rows the table
    * currently holds plus the active filters, and returns a `columnKey -> content` map. The table
