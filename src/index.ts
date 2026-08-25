@@ -81,7 +81,7 @@ export type {
 export type { SearchMode } from './utils';
 
 // Hooks
-export { useSnowColumns, useTableStatePersist, urlStateStorage } from './hooks';
+export { useSnowColumns, useTableStatePersist } from './hooks';
 export type { TableStateStorage } from './hooks';
 export { useTooltip, Tooltip } from './hooks/useTooltip';
 export type { UseSnowColumnsOptions, UseSnowColumnsReturn } from './hooks';

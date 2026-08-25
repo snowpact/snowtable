@@ -33,7 +33,7 @@ export interface TableStateStorage {
 }
 
 /** Default storage: the URL query string, written with `history.replaceState`. */
-export const urlStateStorage: TableStateStorage = {
+const urlStateStorage: TableStateStorage = {
   getItem: key => {
     if (typeof window === 'undefined') return null;
     try {
