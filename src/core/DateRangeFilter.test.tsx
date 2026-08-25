@@ -12,7 +12,7 @@ const filter: DateRangeFilterConfig<Item> = { type: 'dateRange', key: 'createdAt
 describe('DateRangeFilter', () => {
   it('shows the fallback label and no active state when empty', () => {
     renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={vi.fn()} />);
-    const btn = screen.getByRole('button');
+    const btn = screen.getByTestId('snow-filter-trigger');
     expect(btn).toHaveTextContent('Created at');
     expect(btn.className).not.toContain('snow-state-active');
   });
@@ -21,7 +21,7 @@ describe('DateRangeFilter', () => {
     renderWithProviders(
       <DateRangeFilter filter={filter} selectedValues={['2024-01-01', '2024-12-31']} onFilterChange={vi.fn()} />
     );
-    const btn = screen.getByRole('button');
+    const btn = screen.getByTestId('snow-filter-trigger');
     expect(btn.className).toContain('snow-state-active');
     expect(btn).toHaveTextContent('2024');
   });
@@ -29,7 +29,7 @@ describe('DateRangeFilter', () => {
   it('opens the calendar popover with weekday headers and days on click', async () => {
     const user = userEvent.setup();
     renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={vi.fn()} />);
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     const calendar = await screen.findByTestId('snow-calendar');
     expect(within(calendar).getByText('15')).toBeInTheDocument();
     expect(screen.getByText('Apply')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('DateRangeFilter', () => {
     const user = userEvent.setup();
     const onFilterChange = vi.fn();
     renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={onFilterChange} />);
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     const calendar = await screen.findByTestId('snow-calendar');
     await user.click(within(calendar).getByText('10'));
     await user.click(within(calendar).getByText('20'));
@@ -56,7 +56,7 @@ describe('DateRangeFilter', () => {
     const user = userEvent.setup();
     const onFilterChange = vi.fn();
     renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={onFilterChange} />);
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     const calendar = await screen.findByTestId('snow-calendar');
     await user.click(within(calendar).getByText('20'));
     await user.click(within(calendar).getByText('10'));
@@ -72,7 +72,7 @@ describe('DateRangeFilter', () => {
     const onFilterChange = vi.fn();
     renderWithProviders(<DateRangeFilter filter={filter} onFilterChange={onFilterChange} />);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     const calendar = await screen.findByTestId('snow-calendar');
     await user.click(within(calendar).getByText('12'));
     await user.click(within(calendar).getByText('12'));
@@ -89,7 +89,7 @@ describe('DateRangeFilter', () => {
     renderWithProviders(
       <DateRangeFilter filter={filter} selectedValues={['2024-01-01', '2024-12-31']} onFilterChange={onFilterChange} />
     );
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     await user.click(screen.getByText('Reset'));
     expect(onFilterChange).toHaveBeenCalledWith('createdAt', []);
   });
@@ -106,7 +106,7 @@ describe('DateRangeFilter', () => {
     renderWithProviders(
       <DateRangeFilter filter={bounded} selectedValues={['2024-06-10', '2024-06-20']} onFilterChange={vi.fn()} />
     );
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     const calendar = await screen.findByTestId('snow-calendar');
     expect(within(calendar).getByText('3')).toBeDisabled(); // before minDate
     expect(within(calendar).getByText('28')).toBeDisabled(); // after maxDate

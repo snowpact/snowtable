@@ -6,13 +6,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { ChevronDown, Search } from '../icons';
+import { Search } from '../icons';
 import { Button } from '../primitives/Button';
 import { Input } from '../primitives/Input';
 import { Popover } from '../primitives/Popover';
 import { cn } from '../utils';
 
 import type { FilterKey, TextFilterConfig } from './filterConfig';
+import { FilterTriggerEnd } from './FilterTriggerEnd';
 
 const DEBOUNCE_MS = 400;
 
@@ -46,12 +47,21 @@ export function TextFilter<T extends object>({ filter, selectedValues, onFilterC
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button className={cn('snow-filter-btn snow-w-full snow-justify-between', isActive && 'snow-state-active')}>
+        <Button
+          data-testid="snow-filter-trigger"
+          className={cn('snow-filter-btn snow-w-full snow-justify-between', isActive && 'snow-state-active')}
+        >
           <div className="snow-filter-btn-content">
             <Search className={cn('snow-size-4 snow-shrink-0', isActive && 'snow-state-active-text')} />
             <span className="snow-truncate">{isActive ? committed : filter.label}</span>
           </div>
-          <ChevronDown className="snow-size-4 snow-opacity-50 snow-shrink-0" />
+          <FilterTriggerEnd
+            isActive={isActive}
+            onClear={() => {
+              setText('');
+              onFilterChange(filter.key, []);
+            }}
+          />
         </Button>
       </Popover.Trigger>
       <Popover.Content align="start" className="snow-w-56">

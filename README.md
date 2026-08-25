@@ -129,6 +129,8 @@ const filters: FilterConfig<User>[] = [
 <SnowClientDataTable /* … */ filters={filters} />;
 ```
 
+Once a filter holds a value, its button shows a **×** to clear it in one click (the chevron is only shown while the filter is empty). A `multipleSelection` filter **keeps its list open** while you pick values — and says so with a "Multiple selection" hint — whereas a single-choice filter closes after one pick.
+
 - **`select`** (default): categorical multi-select from `options`.
 - **`text`**: free-text contains filter. The query is stored as `[query]`.
 - **`dateRange`**: calendar range over an ISO `'YYYY-MM-DD'` column. The value is `[from, to]`, both inclusive; a **single day is `[day, day]`** — click the same day twice, there are no open-ended ranges.

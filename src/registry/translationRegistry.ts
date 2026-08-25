@@ -18,6 +18,7 @@ const defaultTranslations = {
   'dataTable.searchFilters': 'Search...',
   'dataTable.searchEmpty': 'No results found',
   'dataTable.selectFilter': 'Select...',
+  'dataTable.multipleSelection': 'Multiple selection',
   'dataTable.filters': 'Filters',
   'dataTable.apply': 'Apply',
   'dataTable.prevMonth': 'Previous month',

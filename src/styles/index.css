@@ -1124,6 +1124,29 @@
   text-align: center;
 }
 
+/* Clear "×" replacing the chevron once a filter holds a value. */
+.snow-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--snow-table-radius);
+  color: var(--snow-table-muted);
+  cursor: pointer;
+}
+
+.snow-filter-clear:hover,
+.snow-filter-clear:focus-visible {
+  color: var(--snow-table-foreground);
+}
+
+/* "Multiple selection" hint shown atop a multi-select filter list. */
+.snow-filter-hint {
+  padding: 0 0.75rem 0.375rem;
+  font-size: 0.75rem;
+  color: var(--snow-table-muted);
+}
+
 /* =============================================
    ACTION CELL COMPONENT
    ============================================= */

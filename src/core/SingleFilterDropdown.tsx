@@ -2,7 +2,7 @@
  * Single filter dropdown with multi-select support
  */
 
-import { ChevronDown, Filter, ListFilter, Search } from '../icons';
+import { Filter, ListFilter, Search } from '../icons';
 import { useState, useMemo } from 'react';
 
 import { Button } from '../primitives/Button';
@@ -11,6 +11,7 @@ import { Input } from '../primitives/Input';
 import { getT } from '../registry';
 import { cn } from '../utils';
 import type { CategoricalFilterConfig, FilterKey } from './filterConfig';
+import { FilterTriggerEnd } from './FilterTriggerEnd';
 
 export type { FilterConfig, FilterOption } from './filterConfig';
 
@@ -88,7 +89,10 @@ export function SingleFilterDropdown<T extends object>({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <Button className={cn('snow-filter-btn snow-w-full snow-justify-between', activeCount > 0 && 'snow-state-active')}>
+        <Button
+          data-testid="snow-filter-trigger"
+          className={cn('snow-filter-btn snow-w-full snow-justify-between', activeCount > 0 && 'snow-state-active')}
+        >
           <div className="snow-filter-btn-content">
             {filter.multipleSelection ? (
               <ListFilter className={cn('snow-size-4 snow-shrink-0', activeCount > 0 && 'snow-state-active-text')} />
@@ -97,7 +101,7 @@ export function SingleFilterDropdown<T extends object>({
             )}
             <span className="snow-truncate">{getDisplayText()}</span>
           </div>
-          <ChevronDown className="snow-size-3\\.5 snow-opacity-50 snow-shrink-0" />
+          <FilterTriggerEnd isActive={activeCount > 0} onClear={handleReset} />
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="start" className="snow-w-56">
@@ -119,6 +123,9 @@ export function SingleFilterDropdown<T extends object>({
           </div>
         </div>
 
+        {/* Multi-select stays open while picking, so signal it explicitly. */}
+        {filter.multipleSelection && <div className="snow-filter-hint">{t('dataTable.multipleSelection')}</div>}
+
         {filteredOptions.length === 0 ? (
           <div className="snow-filter-empty">{t('dataTable.searchEmpty')}</div>
         ) : (
@@ -127,6 +134,9 @@ export function SingleFilterDropdown<T extends object>({
               key={option.value}
               checked={selectedValues.includes(option.value)}
               onCheckedChange={() => handleOptionToggle(option.value)}
+              // Picking several values shouldn't dismiss the list; a single-choice
+              // filter is done after one pick, so it still closes.
+              closeOnSelect={!filter.multipleSelection}
               className="snow-cursor-pointer"
             >
               {option.label}
