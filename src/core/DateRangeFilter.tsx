@@ -10,13 +10,14 @@
 
 import { useState } from 'react';
 
-import { Calendar as CalendarIcon, ChevronDown } from '../icons';
+import { Calendar as CalendarIcon } from '../icons';
 import { Button } from '../primitives/Button';
 import { Popover } from '../primitives/Popover';
 import { getT } from '../registry';
 import { cn, parseISODate } from '../utils';
 
 import { Calendar } from './Calendar';
+import { FilterTriggerEnd } from './FilterTriggerEnd';
 import { decodeDateRange, encodeDateRange, type DateRangeFilterConfig, type DateRangeValue, type FilterKey } from './filterConfig';
 
 export interface DateRangeFilterProps<T extends object> {
@@ -64,12 +65,15 @@ export function DateRangeFilter<T extends object>({ filter, selectedValues, onFi
   return (
     <Popover.Root open={open} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
-        <Button className={cn('snow-filter-btn snow-w-full snow-justify-between', isActive && 'snow-state-active')}>
+        <Button
+          data-testid="snow-filter-trigger"
+          className={cn('snow-filter-btn snow-w-full snow-justify-between', isActive && 'snow-state-active')}
+        >
           <div className="snow-filter-btn-content">
             <CalendarIcon className={cn('snow-size-4 snow-shrink-0', isActive && 'snow-state-active-text')} />
             <span className="snow-truncate">{formatTriggerLabel(committed, filter.label)}</span>
           </div>
-          <ChevronDown className="snow-size-4 snow-opacity-50 snow-shrink-0" />
+          <FilterTriggerEnd isActive={isActive} onClear={clear} />
         </Button>
       </Popover.Trigger>
       <Popover.Content align="start">

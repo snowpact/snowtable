@@ -11,10 +11,10 @@ const filter: TextFilterConfig<Item> = { type: 'text', key: 'email', label: 'Ema
 describe('TextFilter', () => {
   it('shows the label when empty and the query when set', () => {
     const { rerender } = render(<TextFilter filter={filter} onFilterChange={vi.fn()} />);
-    expect(screen.getByRole('button')).toHaveTextContent('Email');
+    expect(screen.getByTestId('snow-filter-trigger')).toHaveTextContent('Email');
 
     rerender(<TextFilter filter={filter} selectedValues={['alice']} onFilterChange={vi.fn()} />);
-    expect(screen.getByRole('button')).toHaveTextContent('alice');
+    expect(screen.getByTestId('snow-filter-trigger')).toHaveTextContent('alice');
   });
 
   it('commits a debounced query', async () => {
@@ -22,7 +22,7 @@ describe('TextFilter', () => {
     const onFilterChange = vi.fn();
     render(<TextFilter filter={filter} onFilterChange={onFilterChange} />);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     await user.type(await screen.findByRole('textbox'), 'alice');
 
     await waitFor(() => expect(onFilterChange).toHaveBeenCalledWith('email', ['alice']));
@@ -33,7 +33,7 @@ describe('TextFilter', () => {
     const onFilterChange = vi.fn();
     render(<TextFilter filter={filter} selectedValues={['alice']} onFilterChange={onFilterChange} />);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     await user.clear(await screen.findByRole('textbox'));
 
     await waitFor(() => expect(onFilterChange).toHaveBeenCalledWith('email', []));
@@ -45,7 +45,7 @@ describe('TextFilter', () => {
     const second = vi.fn();
     const { rerender } = render(<TextFilter filter={filter} onFilterChange={first} />);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByTestId('snow-filter-trigger'));
     await user.type(await screen.findByRole('textbox'), 'ali');
     // Parent re-render hands down a new handler identity mid-debounce.
     rerender(<TextFilter filter={filter} onFilterChange={second} />);

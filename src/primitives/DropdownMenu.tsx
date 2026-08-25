@@ -73,13 +73,16 @@ interface CheckboxItemProps {
   onCheckedChange?: (checked: boolean) => void;
   className?: string;
   children: ReactNode;
+  /** Close the menu when the item is picked. Defaults to Radix's behaviour (true). */
+  closeOnSelect?: boolean;
 }
 
-function CheckboxItem({ checked, onCheckedChange, className, children }: CheckboxItemProps) {
+function CheckboxItem({ checked, onCheckedChange, className, children, closeOnSelect = true }: CheckboxItemProps) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
       checked={checked}
       onCheckedChange={onCheckedChange}
+      onSelect={closeOnSelect ? undefined : e => e.preventDefault()}
       className={cn('snow-dropdown-checkbox-item', className)}
     >
       <span className="snow-dropdown-checkbox-indicator">
