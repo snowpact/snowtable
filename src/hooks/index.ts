@@ -5,7 +5,6 @@
 export { useSnowColumns, type UseSnowColumnsOptions, type UseSnowColumnsReturn } from './useSnowColumns';
 export {
   useTableStatePersist,
-  urlStateStorage,
   type TableStateStorage,
   STORAGE_KEY_PREFILTER,
   STORAGE_KEY_SEARCH,
