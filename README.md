@@ -192,6 +192,46 @@ Override CSS variables to match your design. Variables use `@property` so they w
 }
 ```
 
+#### Styling the controls apart from the grid
+
+The variables above drive **both** the data grid and the controls (buttons, inputs, dropdowns, tabs, pagination, calendar). To restyle only the controls — rounder buttons, a thicker control border, a different calendar accent — set these instead. Each one **falls back to its `--snow-table-*` counterpart**, so leaving it unset changes nothing:
+
+| Variable | Falls back to | Applies to |
+| --- | --- | --- |
+| `--snow-control-radius` | `--snow-table-radius` | buttons, inputs, selects, popovers, dropdown items, tabs, pagination, calendar days |
+| `--snow-control-border` | `--snow-table-border` | the same controls' borders + separators |
+| `--snow-calendar-accent` | `--snow-table-primary` | selected day, in-range days, day focus ring, the "Apply" button |
+
+```css
+:root {
+  --snow-control-radius: 999px;   /* pill-shaped controls, grid corners untouched */
+  --snow-control-border: #94a3b8; /* stronger control outline */
+  --snow-calendar-accent: #16a34a;
+}
+```
+
+> These three are intentionally **not** registered with `@property`: an `@property` `initial-value` would always win over the fallback, breaking the inheritance from `--snow-table-*`.
+
+#### Calendar DOM (portaled)
+
+The date-range panel is rendered through a **portal into `<body>`**, so it escapes the table's overflow — which also means a `className` scoped on the table does **not** reach it. Scope on `.snow-calendar-popover` instead, the panel's root:
+
+```
+.snow-calendar-popover            ← portaled panel root (also .snow-popover-content)
+├─ .snow-calendar                 ← the grid
+│  ├─ .snow-calendar-header       → .snow-calendar-title, nav buttons
+│  ├─ .snow-calendar-weekdays     → .snow-calendar-weekday
+│  └─ .snow-calendar-grid         → .snow-calendar-day
+│                                    (-selected, -in-range, -range-start,
+│                                     -range-end, -today, -blank)
+└─ .snow-calendar-footer          ← sibling of the grid, holds Reset + .snow-calendar-apply
+```
+
+```css
+/* Reaches the panel even though it lives outside the table */
+.snow-calendar-popover .snow-calendar-apply { text-transform: uppercase; }
+```
+
 ### Scoped Theming with `className`
 
 For full control over sizes, paddings, typography, etc., pass a `className` to scope your CSS:
