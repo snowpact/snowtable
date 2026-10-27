@@ -383,6 +383,77 @@ describe('SnowClientDataTable with persistState', () => {
     const activeTab = screen.getByText('Active').closest('button');
     expect(activeTab).toHaveAttribute('data-state', 'active');
   });
+
+  // 60 items -> 3 pages at the default page size (25)
+  const manyItems: TestItem[] = Array.from({ length: 60 }, (_, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    return { id: n, name: `Person ${n}`, email: `person${n}@example.com` };
+  });
+
+  // Back-navigation from a detail page: the data loads after mount, which must not send the user back to page 1
+  it('should restore page from URL once the data has loaded', async () => {
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '2');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowClientDataTable
+        queryKey={['test-persist-page-restore']}
+        columnConfig={columnConfig}
+        fetchAllItemsEndpoint={vi.fn().mockResolvedValue(manyItems)}
+        persistState
+      />
+    );
+
+    expect(await screen.findByText('Person 26')).toBeInTheDocument();
+    expect(screen.queryByText('Person 01')).not.toBeInTheDocument();
+    expect(getUrlParam(storageKey('page'))).toBe('2');
+  });
+
+  it('should clamp a restored page that is past the last page', async () => {
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '40');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowClientDataTable
+        queryKey={['test-persist-page-clamp']}
+        columnConfig={columnConfig}
+        fetchAllItemsEndpoint={vi.fn().mockResolvedValue(manyItems)}
+        persistState
+      />
+    );
+
+    expect(await screen.findByText('Person 51')).toBeInTheDocument();
+    expect(getUrlParam(storageKey('page'))).toBe('3');
+  });
+
+  it('should go back to the first page when sorting changes', async () => {
+    const user = userEvent.setup();
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '2');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowClientDataTable
+        queryKey={['test-persist-page-sort']}
+        columnConfig={[
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'email', label: 'Email' },
+        ]}
+        fetchAllItemsEndpoint={vi.fn().mockResolvedValue(manyItems)}
+        persistState
+        enableSorting
+      />
+    );
+
+    await screen.findByText('Person 26');
+    await user.click(screen.getAllByText('Name')[0]);
+
+    expect(await screen.findByText('Person 01')).toBeInTheDocument();
+    expect(getUrlParam(storageKey('page'))).toBeNull();
+  });
 });
 
 describe('SnowClientDataTable column configuration cookie', () => {
