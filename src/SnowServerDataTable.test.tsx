@@ -370,6 +370,91 @@ describe('SnowServerDataTable with persistState', () => {
     );
   });
 
+  // Back-navigation from a detail page remounts the table with dt_page in the URL: it must land there,
+  // not be reset by the "prefilter/filters changed" effect firing on mount.
+  it('should restore page from URL on mount without resetting it', async () => {
+    const fetchServerEndpoint = vi.fn().mockResolvedValue({ items: mockData, totalItemCount: 100 });
+
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '4');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-persist-page']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        prefilters={[
+          { id: 'all', label: 'All' },
+          { id: 'active', label: 'Active' },
+        ]}
+        persistState
+      />
+    );
+
+    await screen.findByText('Server Item 1');
+
+    expect(getUrlParam(storageKey('page'))).toBe('4');
+    for (const [call] of fetchServerEndpoint.mock.calls) {
+      expect(call.offset).toBe(3 * call.limit);
+    }
+  });
+
+  it('should reset a restored page when the prefilter changes', async () => {
+    const user = userEvent.setup();
+    const fetchServerEndpoint = vi.fn().mockResolvedValue({ items: mockData, totalItemCount: 100 });
+
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '4');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-persist-page-reset']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        prefilters={[
+          { id: 'all', label: 'All' },
+          { id: 'active', label: 'Active' },
+        ]}
+        persistState
+      />
+    );
+
+    await screen.findByText('Server Item 1');
+    await user.click(screen.getByText('Active'));
+
+    await waitFor(() => {
+      expect(fetchServerEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({ prefilter: 'active', offset: 0 }));
+    });
+    expect(getUrlParam(storageKey('page'))).toBeNull();
+  });
+
+  // A stale link (dt_page=40 when the data now only fills a few pages) must land on the last page, not an empty one.
+  it('should clamp a restored page that is past the last page', async () => {
+    const fetchServerEndpoint = vi.fn().mockResolvedValue({ items: mockData, totalItemCount: 100 });
+
+    const params = new URLSearchParams();
+    params.set(storageKey('page'), '40');
+    setupLocationMock(params.toString());
+
+    renderWithProviders(
+      <SnowServerDataTable<TestItem, void>
+        queryKey={['test-server-persist-page-clamp']}
+        columnConfig={columnConfig}
+        fetchServerEndpoint={fetchServerEndpoint}
+        persistState
+      />
+    );
+
+    await waitFor(() => {
+      const { limit, offset } = fetchServerEndpoint.mock.lastCall![0];
+      expect(offset).toBe((Math.ceil(100 / limit) - 1) * limit);
+    });
+    const { limit } = fetchServerEndpoint.mock.lastCall![0];
+    expect(getUrlParam(storageKey('page'))).toBe(String(Math.ceil(100 / limit)));
+  });
+
   it('should persist sorting to URL', async () => {
     const user = userEvent.setup();
     const fetchServerEndpoint = vi.fn().mockResolvedValue(mockServerResponse);

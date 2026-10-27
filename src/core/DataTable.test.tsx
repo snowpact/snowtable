@@ -1,4 +1,5 @@
 import { ColumnDef } from '@tanstack/react-table';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataTable } from './DataTable';
@@ -92,6 +93,76 @@ describe('DataTable', () => {
       // Should only show 2 items (pageSize = 2)
       const rows = screen.getAllByTestId(/^datatable-row-/);
       expect(rows.length).toBe(2);
+    });
+
+    // Holds pagination like a consumer would, and exposes the current page index for assertions
+    function ControlledPagination(props: {
+      initialPageIndex: number;
+      data?: TestItem[];
+      mode?: 'client' | 'server';
+      totalCount?: number;
+      activePrefilter?: string;
+      columnFilters?: Record<string, string[]>;
+    }) {
+      const [pagination, setPagination] = useState({ pageIndex: props.initialPageIndex, pageSize: 2 });
+      return (
+        <>
+          <span data-testid="page-index">{pagination.pageIndex}</span>
+          <DataTable
+            data={props.data ?? mockData}
+            columns={columns}
+            mode={props.mode}
+            totalCount={props.totalCount}
+            prefilters={[
+              { id: 'all', label: 'All' },
+              { id: 'active', label: 'Active' },
+            ]}
+            activePrefilter={props.activePrefilter}
+            columnFilters={props.columnFilters}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            enablePagination
+          />
+        </>
+      );
+    }
+
+    it('should clamp a page past the last one to the last page', async () => {
+      // 5 items at 2 per page -> 3 pages; data is present from the first render, so only the clamp can move the page
+      renderWithProviders(<ControlledPagination initialPageIndex={39} />);
+
+      await waitFor(() => expect(screen.getByTestId('page-index')).toHaveTextContent('2'));
+      expect(screen.getByText('Item 5')).toBeInTheDocument();
+    });
+
+    it('should reset to the first page when the prefilter and the page count change together', async () => {
+      const { rerender } = renderWithProviders(
+        <ControlledPagination initialPageIndex={5} mode="server" totalCount={200} activePrefilter="all" />
+      );
+      expect(screen.getByTestId('page-index')).toHaveTextContent('5');
+
+      // Switching prefilter shrinks the result to 3 pages in the same render: the clamp must not override the reset
+      rerender(<ControlledPagination initialPageIndex={5} mode="server" totalCount={6} activePrefilter="active" />);
+
+      await waitFor(() => expect(screen.getByTestId('page-index')).toHaveTextContent('0'));
+    });
+
+    it('should reset to the first page when a column filter changes', async () => {
+      const { rerender } = renderWithProviders(
+        <ControlledPagination initialPageIndex={5} mode="server" totalCount={200} columnFilters={{}} />
+      );
+      expect(screen.getByTestId('page-index')).toHaveTextContent('5');
+
+      rerender(
+        <ControlledPagination
+          initialPageIndex={5}
+          mode="server"
+          totalCount={200}
+          columnFilters={{ status: ['active'] }}
+        />
+      );
+
+      await waitFor(() => expect(screen.getByTestId('page-index')).toHaveTextContent('0'));
     });
 
     it('should display total count', () => {
