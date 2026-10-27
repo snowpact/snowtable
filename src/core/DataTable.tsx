@@ -314,8 +314,7 @@ export function DataTable<Data extends object>({
     onPaginationChange,
     onSortingChange: enableSorting ? onSortingChange : undefined,
     onColumnVisibilityChange: enableColumnConfiguration ? onColumnVisibilityChange : undefined,
-    // Page resets are handled below. TanStack's own reset fires whenever the client row model changes,
-    // including when the data first arrives, which would discard a page restored from persisted state.
+    // Handled below: TanStack's reset also fires when data first arrives, discarding a restored page
     autoResetPageIndex: false,
     // Manual modes (when pageCount is provided)
     manualPagination: serverSideMode,
@@ -339,18 +338,15 @@ export function DataTable<Data extends object>({
       : {}),
   });
 
-  // Client-side sorting reorders every page, so it sends the user back to the first page (server-side sorting
-  // keeps the page, as it always has). Empty when it shouldn't trigger a reset.
+  // Only client-side sorting resets the page
   const clientSortingJson = useMemo(
     () => (!serverSideMode && enableSorting ? JSON.stringify(safeSorting) : ''),
     [serverSideMode, enableSorting, safeSorting]
   );
 
-  // Keep the page index valid. A single effect so the two rules can't overwrite each other in the same commit:
-  // 1. Prefilter, columnFilters or client-side sorting changed -> back to the first page. Skipped on mount (and on
-  //    StrictMode's effect replay) so a page restored from persisted state survives the first render.
-  // 2. Otherwise, a page past the last one (e.g. a stale dt_page restored from the URL) -> the last page.
-  //    Skipped while loading, since the page count is 0 until the data (or totalCount) arrives.
+  // One effect so both rules can't overwrite each other:
+  // 1. Filters or client sorting changed -> first page (not on mount, to keep a restored page)
+  // 2. Page past the last one (stale dt_page) -> last page (not while loading, page count is 0 until then)
   const lastPaginationResetKey = useRef({ activePrefilter, columnFiltersJson, clientSortingJson });
   const tablePageCount = table.getPageCount();
   useEffect(() => {
